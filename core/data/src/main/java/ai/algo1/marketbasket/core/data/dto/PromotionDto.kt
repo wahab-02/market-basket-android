@@ -16,5 +16,5 @@ data class PromotionDto(
     val barcode: String? = null,
     @SerialName("badge_text") val badgeText: String? = null,
     @SerialName("is_active") val isActive: Boolean = false,
-    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("created_at") val createdAt: String? = null,
 )

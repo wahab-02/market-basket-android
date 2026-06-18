@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AppUserDto(
     val id: String,
+    @SerialName("public_id") val publicId: String? = null,
     @SerialName("display_name") val displayName: String? = null,
     @SerialName("slack_id") val slackId: String? = null,
     @SerialName("phone_number") val phoneNumber: String? = null,

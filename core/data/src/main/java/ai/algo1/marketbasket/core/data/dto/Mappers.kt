@@ -26,5 +26,5 @@ fun PromotionDto.toDomain(): Promotion = Promotion(
     barcode = barcode,
     badgeText = badgeText,
     isActive = isActive,
-    createdAt = createdAt,
+    createdAt = createdAt ?: "",
 )
