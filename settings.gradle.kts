@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "MarketBasketAndroid"
 include(":app")
 include(":core:domain")
+include(":core:designsystem")
