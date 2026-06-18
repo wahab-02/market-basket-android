@@ -9,7 +9,8 @@ object CategoryResolver {
     /** Port of matchToKnown: explicit map -> normalized-id exact -> substring -> null. */
     fun matchToKnown(raw: String): String? {
         val lower = raw.lowercase().trim()
-        CategoryMaps.CATEGORY_STRING_MAP[lower]?.let { return it }
+        // TS used a truthiness guard (`if (CATEGORY_STRING_MAP[lower])`), which also skips "".
+        CategoryMaps.CATEGORY_STRING_MAP[lower]?.takeIf { it.isNotEmpty() }?.let { return it }
 
         val normalized = lower.replace(Regex("""\s+"""), "-").replace(Regex("""[^a-z0-9-]"""), "")
         if (normalized in CategoryMaps.KNOWN_CATEGORY_IDS) return normalized
