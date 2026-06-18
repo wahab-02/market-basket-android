@@ -40,6 +40,7 @@ android {
 
 dependencies {
     implementation(project(":core:domain"))
+    // The supabase BOM governs the postgrest/realtime versions (declared without a version.ref).
     implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.realtime)
