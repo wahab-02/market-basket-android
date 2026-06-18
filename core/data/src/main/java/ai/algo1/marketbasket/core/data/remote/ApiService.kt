@@ -26,7 +26,7 @@ class ApiService @Inject constructor(private val client: HttpClient) {
         client.post("$base/api/market-basket/import") {
             contentType(ContentType.Application.Json)
             setBody(request)
-        }.body()
+        }.body<ImportResponse>()
 
     suspend fun googleSync(publicId: String): Int =
         client.get("$base/api/google/sync") {
