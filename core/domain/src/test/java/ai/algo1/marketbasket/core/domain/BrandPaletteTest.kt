@@ -12,6 +12,9 @@ class BrandPaletteTest {
         assertEquals(0xFFC596FFL, BrandPalette.DEALS_BANNER)
         assertEquals(0xFF009476L, BrandPalette.CHECKBOX_CHECKED)
         assertEquals(0xFF080816L, BrandPalette.TEXT_PRIMARY)
+        assertEquals(0xFFFFFFFFL, BrandPalette.BACKGROUND_WHITE)
+        assertEquals(0xFFBBBBBBL, BrandPalette.CHECKBOX_UNCHECKED)
+        assertEquals(0xFFF1F1F1L, BrandPalette.IMAGE_PLACEHOLDER)
     }
 
     @Test

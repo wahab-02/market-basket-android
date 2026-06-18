@@ -1,6 +1,10 @@
 package ai.algo1.marketbasket.core.domain.model
 
-/** Mirrors the TS GroceryItem (src/types/index.ts). Optional TS fields are nullable here. */
+/**
+ * Mirrors the TS GroceryItem (src/types/index.ts). Optional TS fields are nullable here.
+ * NOTE: Supabase returns snake_case JSON (image_url, added_by_name); the data layer must map
+ * those with @SerialName (or a snake_case naming strategy) when (de)serializing.
+ */
 data class GroceryItem(
     val id: String,
     val name: String,
@@ -21,7 +25,11 @@ data class Category(
     val items: List<GroceryItem> = emptyList(),
 )
 
-/** Mirrors the TS Promotion (Supabase row). Nullable fields match the TS `| null` columns. */
+/**
+ * Mirrors the TS Promotion (Supabase row). Nullable fields match the TS `| null` columns.
+ * NOTE: Supabase columns are snake_case (product_name, is_active, ...); the data layer must
+ * map them with @SerialName when deserializing.
+ */
 data class Promotion(
     val id: String,
     val productName: String,
