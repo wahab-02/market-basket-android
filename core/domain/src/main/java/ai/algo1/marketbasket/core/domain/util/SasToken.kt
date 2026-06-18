@@ -21,6 +21,8 @@ object SasToken {
 
     private fun queryParam(url: String, key: String): String? {
         val query = URI(url).rawQuery ?: return null
+        // NOTE: use the String-charset overload. URLDecoder.decode(String, Charset) is Android
+        // API 33+, but this module ships in the app at minSdk 26; "UTF-8" is always supported.
         for (pair in query.split("&")) {
             if (pair.isEmpty()) continue
             val idx = pair.indexOf("=")
