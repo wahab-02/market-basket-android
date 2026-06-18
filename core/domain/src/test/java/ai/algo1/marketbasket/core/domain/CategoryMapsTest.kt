@@ -37,10 +37,19 @@ class CategoryMapsTest {
     fun seedCategories_matchDataIndexTs() {
         assertEquals(6, SeedCategories.all.size)
         assertEquals(CategoryMaps.KNOWN_CATEGORY_IDS, SeedCategories.all.map { it.id })
-        val produce = SeedCategories.all.first()
-        assertEquals("Produce", produce.name)
-        assertEquals("#4ecb71", produce.color)
-        assertEquals("#3ba85c", produce.colorDark)
-        assertTrue(produce.items.isEmpty())
+        assertEquals("Produce", SeedCategories.all.first().name)
+        // All 6 categories' id + hex colors, 1:1 with src/data/index.ts
+        assertEquals(
+            listOf(
+                Triple("produce", "#4ecb71", "#3ba85c"),
+                Triple("snacks", "#e74c3c", "#c0392b"),
+                Triple("dairy", "#3498db", "#2980b9"),
+                Triple("bakery", "#e67e22", "#d35400"),
+                Triple("beverages", "#9b59b6", "#8e44ad"),
+                Triple("frozen", "#1abc9c", "#16a085"),
+            ),
+            SeedCategories.all.map { Triple(it.id, it.color, it.colorDark) },
+        )
+        assertTrue(SeedCategories.all.all { it.items.isEmpty() })
     }
 }
