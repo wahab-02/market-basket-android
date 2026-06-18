@@ -1,9 +1,11 @@
 package ai.algo1.marketbasket.core.designsystem
 
 import ai.algo1.marketbasket.core.domain.theme.BrandPalette
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
 /** Compose colors built from the unit-tested BrandPalette values (single source of truth). */
+@Immutable
 object MarketBasketColors {
     val Primary = Color(BrandPalette.PRIMARY)
     val BackgroundWhite = Color(BrandPalette.BACKGROUND_WHITE)
