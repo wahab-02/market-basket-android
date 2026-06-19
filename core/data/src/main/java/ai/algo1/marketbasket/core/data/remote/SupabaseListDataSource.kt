@@ -15,7 +15,7 @@ import io.github.jan.supabase.realtime.postgresChangeFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
@@ -50,7 +50,7 @@ class SupabaseListDataSource @Inject constructor(
         supabase.from(TABLE).insert(
             ShoppingListItemDto(
                 id = item.id, userId = userId, name = item.name, quantity = item.quantity,
-                category = item.categoryId, checked = item.checked, source = item.source, imageUrl = item.imageUrl,
+                category = item.categoryId, source = item.source, imageUrl = item.imageUrl,
             )
         )
     }
@@ -80,18 +80,22 @@ class SupabaseListDataSource @Inject constructor(
             filter("user_id", FilterOperator.EQ, userId)
         }
         channel.subscribe()
-        emitAll(
-            changeFlow.map { action ->
-                when (action) {
-                    is PostgresAction.Insert ->
-                        ListChange.Upserted(json.decodeFromJsonElement(ShoppingListItemDto.serializer(), action.record).toDomain(), isUpdate = false)
-                    is PostgresAction.Update ->
-                        ListChange.Upserted(json.decodeFromJsonElement(ShoppingListItemDto.serializer(), action.record).toDomain(), isUpdate = true)
-                    is PostgresAction.Delete ->
-                        ListChange.Deleted(action.oldRecord["id"]?.jsonPrimitive?.content ?: "")
-                    else -> ListChange.Deleted("")
+        try {
+            emitAll(
+                changeFlow.mapNotNull { action ->
+                    when (action) {
+                        is PostgresAction.Insert ->
+                            ListChange.Upserted(json.decodeFromJsonElement(ShoppingListItemDto.serializer(), action.record).toDomain(), isUpdate = false)
+                        is PostgresAction.Update ->
+                            ListChange.Upserted(json.decodeFromJsonElement(ShoppingListItemDto.serializer(), action.record).toDomain(), isUpdate = true)
+                        is PostgresAction.Delete ->
+                            ListChange.Deleted(action.oldRecord["id"]?.jsonPrimitive?.content ?: "")
+                        else -> null   // PostgresAction.Select (initial snapshot) / future kinds: ignore
+                    }
                 }
-            }
-        )
+            )
+        } finally {
+            channel.unsubscribe()
+        }
     }
 }
