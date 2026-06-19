@@ -3,41 +3,24 @@ package ai.algo1.marketbasket
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.activity.viewModels
+import ai.algo1.marketbasket.core.designsystem.MarketBasketTheme
+import ai.algo1.marketbasket.nav.AppNavHost
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val appViewModel: AppViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Inbound App Link: https://<host>/?u=<publicId>
+        val inbound = intent?.data?.getQueryParameter("u")
+        appViewModel.bootstrap(inbound)
         setContent {
-            MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    PlaceholderScreen()
-                }
+            MarketBasketTheme {
+                AppNavHost()
             }
         }
     }
-}
-
-@Composable
-fun PlaceholderScreen() {
-    Text(
-        text = "Market Basket — Android scaffold",
-        modifier = Modifier.fillMaxSize().wrapContentSize(),
-        style = MaterialTheme.typography.titleLarge,
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PlaceholderScreenPreview() {
-    MaterialTheme { PlaceholderScreen() }
 }
