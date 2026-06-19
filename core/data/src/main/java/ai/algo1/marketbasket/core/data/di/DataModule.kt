@@ -1,6 +1,8 @@
 package ai.algo1.marketbasket.core.data.di
 
 import ai.algo1.marketbasket.core.data.BuildConfig
+import ai.algo1.marketbasket.core.data.remote.RemoteListDataSource
+import ai.algo1.marketbasket.core.data.remote.SupabaseListDataSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -49,4 +51,8 @@ object DataModule {
             }
         }
     }
+
+    @Provides
+    @Singleton
+    fun provideRemoteListDataSource(impl: SupabaseListDataSource): RemoteListDataSource = impl
 }
