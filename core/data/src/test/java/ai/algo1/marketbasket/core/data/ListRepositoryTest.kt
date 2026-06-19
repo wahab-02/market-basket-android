@@ -53,5 +53,24 @@ class ListRepositoryTest {
         val names = repo.categories.value.flatMap { it.items }.map { it.name }
         assertTrue(names.contains("Eggs"))
         assertEquals(2, names.size)              // seed + realtime-inserted
+        assertEquals(0, remote.inserted)         // realtime application must not re-persist
+    }
+
+    @Test fun toggle_flipsStateAndPersists() = runTest {
+        val remote = FakeRemote(listOf(GroceryItem(id = "i1", name = "Milk", categoryId = "dairy", checked = false)))
+        val repo = ListRepository(remote)
+        repo.load("pub1")
+        repo.toggle("i1")
+        assertTrue(repo.categories.value.flatMap { it.items }.single().checked)
+        assertEquals(1, remote.checkedCalls)
+    }
+
+    @Test fun delete_removesStateAndPersists() = runTest {
+        val remote = FakeRemote(listOf(GroceryItem(id = "i1", name = "Milk", categoryId = "dairy")))
+        val repo = ListRepository(remote)
+        repo.load("pub1")
+        repo.delete("i1")
+        assertTrue(repo.categories.value.flatMap { it.items }.isEmpty())
+        assertEquals(1, remote.deleted)
     }
 }
