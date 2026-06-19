@@ -48,7 +48,12 @@ fun AppNavHost() {
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             Destination.entries.forEach { dest ->
-                composable(dest.route) { PlaceholderScreen(dest.label) }
+                composable(dest.route) {
+                    when (dest) {
+                        Destination.List -> ai.algo1.marketbasket.feature.list.ListRoute()
+                        else -> PlaceholderScreen(dest.label)
+                    }
+                }
             }
         }
     }
