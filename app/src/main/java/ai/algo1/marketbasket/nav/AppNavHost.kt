@@ -51,6 +51,7 @@ fun AppNavHost() {
                 composable(dest.route) {
                     when (dest) {
                         Destination.List -> ai.algo1.marketbasket.feature.list.ListRoute()
+                        Destination.Deals -> ai.algo1.marketbasket.feature.deals.DealsRoute()
                         else -> PlaceholderScreen(dest.label)
                     }
                 }
