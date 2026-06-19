@@ -80,9 +80,16 @@ class ListReducerTest {
         val out = ListReducer.applyRealtimeInsert(start, item("other", "  MILK ", "dairy", qty = 4, checked = true).copy(imageUrl = "new", source = "whatsapp"))
         val merged = find(out, "e1")!!
         assertEquals(7, merged.quantity)         // 3 + 4
+        assertTrue(merged.checked)               // incoming checked propagates
         assertEquals("whatsapp", merged.source)  // incoming source wins
         assertEquals("old", merged.imageUrl)     // existing image kept
         assertNull(find(out, "other"))           // not appended
+    }
+
+    @Test fun addExisting_takesIncomingImage_whenExistingImageNull() {
+        val start = cats(cat("dairy", item("e1", "Milk", "dairy")))  // existing imageUrl == null
+        val r = ListReducer.addOrIncrement(start, name = "Milk", categoryId = "dairy", source = "search", imageUrl = "incoming", newId = "x")
+        assertEquals("incoming", find(r.categories, "e1")!!.imageUrl)
     }
 
     @Test fun realtimeInsert_newItem_appendsToCategory_fallbackFirstWhenUnknown() {
