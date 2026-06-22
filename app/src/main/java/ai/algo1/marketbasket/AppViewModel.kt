@@ -30,6 +30,7 @@ class AppViewModel @Inject constructor(
 
     private var started = false
     private var realtimeStarted = false
+    private var evaluating = false
     private var resolvedPublicId: String? = null
 
     /** Called once from the Activity with the inbound `?u=` value (if any) from an App Link. */
@@ -51,25 +52,36 @@ class AppViewModel @Inject constructor(
     /** Re-evaluate connection (called from the Activity onResume), e.g. after returning from WhatsApp. */
     fun recheckConnection() {
         val pid = resolvedPublicId ?: return
-        if (_connectionState.value == ConnectionState.Connected) return
+        // Re-attempt until the list has actually loaded + realtime is active. This recovers a
+        // cached-Connected-but-offline session once connectivity returns, and keeps polling an
+        // Unconnected session so returning from WhatsApp flips the gate.
+        if (realtimeStarted) return
         viewModelScope.launch { evaluate(pid) }
     }
 
     private suspend fun evaluate(publicId: String) {
-        val cached = localStore.connected.first()
-        val rowExists = try {
-            listRepository.load(publicId)
-        } catch (e: Exception) {
-            false   // offline / transient: fall back to the cached flag below
-        }
-        val state = Connection.resolve(cachedConnected = cached, rowExists = rowExists)
-        if (state == ConnectionState.Connected) {
-            if (rowExists && !cached) localStore.setConnected(true)
-            if (!realtimeStarted) {
-                listRepository.observeRealtime(viewModelScope)
-                realtimeStarted = true
+        if (evaluating) return
+        evaluating = true
+        try {
+            val cached = localStore.connected.first()
+            val rowExists = try {
+                listRepository.load(publicId)
+            } catch (e: Exception) {
+                false   // offline / transient: fall back to the cached flag below
             }
+            // Persisting the connected flag and starting realtime both require a real row
+            // (load() populates userId only when rowExists); gating on rowExists also lets a
+            // cached-but-not-yet-loaded session finish loading on a later recheck.
+            if (rowExists) {
+                if (!cached) localStore.setConnected(true)
+                if (!realtimeStarted) {
+                    listRepository.observeRealtime(viewModelScope)
+                    realtimeStarted = true
+                }
+            }
+            _connectionState.value = Connection.resolve(cachedConnected = cached, rowExists = rowExists)
+        } finally {
+            evaluating = false
         }
-        _connectionState.value = state
     }
 }
