@@ -66,6 +66,7 @@ fun AppNavHost() {
                                 onSearchClose = { listSearchOpen.value = false },
                             )
                             Destination.Deals -> ai.algo1.marketbasket.feature.deals.DealsRoute()
+                            Destination.You -> ai.algo1.marketbasket.feature.onboarding.ConnectionRoute()
                             else -> PlaceholderScreen(dest.label)
                         }
                     }

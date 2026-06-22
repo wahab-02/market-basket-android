@@ -32,6 +32,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.android)
+    implementation(libs.zxing.core)
     ksp(libs.hilt.compiler)
     debugImplementation(libs.androidx.ui.tooling)
     testImplementation(libs.junit)
