@@ -9,5 +9,4 @@ internal object OnboardingColors {
     val Muted = Color(0xFF667085)
     val DotInactive = Color(0xFFD9DCE3)
     val ChipBg = Color(0xFFF0F1F3)
-    val Hairline = Color(0x14080816)
 }
