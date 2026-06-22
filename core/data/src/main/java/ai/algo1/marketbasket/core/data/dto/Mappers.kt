@@ -1,5 +1,6 @@
 package ai.algo1.marketbasket.core.data.dto
 
+import ai.algo1.marketbasket.core.domain.connection.UserProfile
 import ai.algo1.marketbasket.core.domain.model.GroceryItem
 import ai.algo1.marketbasket.core.domain.model.Promotion
 
@@ -27,4 +28,11 @@ fun PromotionDto.toDomain(): Promotion = Promotion(
     badgeText = badgeText,
     isActive = isActive,
     createdAt = createdAt ?: "",
+)
+
+/** app_users row -> domain connection profile. */
+fun AppUserDto.toUserProfile(): UserProfile = UserProfile(
+    displayName = displayName,
+    phoneNumber = phoneNumber,
+    listCode = listCode,
 )

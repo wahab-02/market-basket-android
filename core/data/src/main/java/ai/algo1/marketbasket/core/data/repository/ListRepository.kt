@@ -1,7 +1,9 @@
 package ai.algo1.marketbasket.core.data.repository
 
+import ai.algo1.marketbasket.core.data.dto.toUserProfile
 import ai.algo1.marketbasket.core.data.remote.ListChange
 import ai.algo1.marketbasket.core.data.remote.RemoteListDataSource
+import ai.algo1.marketbasket.core.domain.connection.UserProfile
 import ai.algo1.marketbasket.core.domain.list.ListReducer
 import ai.algo1.marketbasket.core.domain.model.Category
 import kotlinx.coroutines.CoroutineScope
@@ -19,16 +21,30 @@ class ListRepository @Inject constructor(private val remote: RemoteListDataSourc
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
     val categories: StateFlow<List<Category>> = _categories.asStateFlow()
 
+    private val _publicId = MutableStateFlow<String?>(null)
+    val publicId: StateFlow<String?> = _publicId.asStateFlow()
+
+    private val _userProfile = MutableStateFlow<UserProfile?>(null)
+    val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
+
     private var userId: String? = null
 
-    suspend fun load(publicId: String) {
-        val user = remote.loadUser(publicId) ?: return
+    /** Loads the user + list for [publicId]. Returns true if an app_users row exists (i.e. connected). */
+    suspend fun load(publicId: String): Boolean {
+        _publicId.value = publicId
+        val user = remote.loadUser(publicId)
+        if (user == null) {
+            _userProfile.value = null
+            return false
+        }
         userId = user.id
+        _userProfile.value = user.toUserProfile()
         // Group items by category id into buckets; the UI layer (Plan 07) applies seeded order/colors.
         val items = remote.loadItems(user.id)
         _categories.value = items.groupBy { it.categoryId }.map { (cid, list) ->
             Category(id = cid, name = cid, color = "", colorDark = "", items = list)
         }
+        return true
     }
 
     suspend fun addOrIncrement(

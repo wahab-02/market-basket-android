@@ -13,14 +13,18 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ListRepositoryTest {
-    private class FakeRemote(private val initial: List<GroceryItem>) : RemoteListDataSource {
+    private class FakeRemote(
+        private val initial: List<GroceryItem>,
+        private val user: AppUserDto? = AppUserDto(id = "owner"),
+    ) : RemoteListDataSource {
         val realtime = Channel<ListChange>(Channel.UNLIMITED)
         var inserted = 0; var updated = 0; var checkedCalls = 0; var deleted = 0
-        override suspend fun loadUser(publicId: String) = AppUserDto(id = "owner", publicId = publicId)
+        override suspend fun loadUser(publicId: String): AppUserDto? = user?.copy(publicId = publicId)
         override suspend fun loadItems(userId: String) = initial
         override suspend fun insertItem(userId: String, item: GroceryItem) { inserted++ }
         override suspend fun updateItem(id: String, item: GroceryItem) { updated++ }
@@ -72,5 +76,25 @@ class ListRepositoryTest {
         repo.delete("i1")
         assertTrue(repo.categories.value.flatMap { it.items }.isEmpty())
         assertEquals(1, remote.deleted)
+    }
+
+    @Test fun load_returnsFalse_whenNoUserRow() = runTest {
+        val repo = ListRepository(FakeRemote(emptyList(), user = null))
+        val found = repo.load("pubX")
+        assertEquals(false, found)
+        assertEquals(null, repo.userProfile.value)
+        assertEquals("pubX", repo.publicId.value)  // publicId is recorded even when unconnected
+    }
+
+    @Test fun load_returnsTrue_andExposesProfile_whenUserRowExists() = runTest {
+        val user = AppUserDto(id = "owner", displayName = "Sam", phoneNumber = "1555", listCode = "ABC123")
+        val repo = ListRepository(FakeRemote(emptyList(), user = user))
+        val found = repo.load("pubY")
+        assertTrue(found)
+        val profile = repo.userProfile.value!!
+        assertEquals("Sam", profile.displayName)
+        assertTrue(profile.phoneConnected)
+        assertEquals("ABC123", profile.listCode)
+        assertEquals("pubY", repo.publicId.value)
     }
 }

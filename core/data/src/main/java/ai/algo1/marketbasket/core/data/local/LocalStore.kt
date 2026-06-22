@@ -2,6 +2,7 @@ package ai.algo1.marketbasket.core.data.local
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -17,10 +18,12 @@ class LocalStore @Inject constructor(@ApplicationContext private val context: Co
     private object Keys {
         val PUBLIC_ID = stringPreferencesKey("public_id")
         val LIST_CODE = stringPreferencesKey("list_code")
+        val CONNECTED = booleanPreferencesKey("connected")
     }
 
     val publicId: Flow<String?> = context.dataStore.data.map { it[Keys.PUBLIC_ID] }
     val listCode: Flow<String?> = context.dataStore.data.map { it[Keys.LIST_CODE] }
+    val connected: Flow<Boolean> = context.dataStore.data.map { it[Keys.CONNECTED] ?: false }
 
     suspend fun setPublicId(value: String) {
         context.dataStore.edit { it[Keys.PUBLIC_ID] = value }
@@ -28,5 +31,9 @@ class LocalStore @Inject constructor(@ApplicationContext private val context: Co
 
     suspend fun setListCode(value: String) {
         context.dataStore.edit { it[Keys.LIST_CODE] = value }
+    }
+
+    suspend fun setConnected(value: Boolean) {
+        context.dataStore.edit { it[Keys.CONNECTED] = value }
     }
 }
