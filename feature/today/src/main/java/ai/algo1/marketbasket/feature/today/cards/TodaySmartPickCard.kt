@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -40,12 +42,15 @@ private fun spColor(c: SmartPickColor): Color = when (c) {
     SmartPickColor.Blue -> TodayColors.SpBlue
 }
 
+private fun Modifier.smartPickShadow(): Modifier =
+    shadow(24.dp, ambientColor = Color(0x12111116), spotColor = Color(0x12111116))
+
 @Composable
 internal fun TodaySmartPickCard(card: SmartPickCard, onAddToList: () -> Unit, onViewRecipe: () -> Unit) {
     var justAdded by remember { mutableStateOf(false) }
     val tagColor = spColor(card.tagColor)
-    Surface(color = Color.White, modifier = Modifier.width(280.dp).height(380.dp)) {
-        Column {
+    Surface(color = Color.White, modifier = Modifier.width(280.dp).height(408.dp).smartPickShadow()) {
+        Column(Modifier.fillMaxHeight()) {
             Box(Modifier.fillMaxWidth().height(200.dp).background(TodayColors.SpImageBg)) {
                 Image(
                     painter = painterResource(TodayImages.smartPick(card.imageKey)),
@@ -84,19 +89,19 @@ internal fun TodaySmartPickCard(card: SmartPickCard, onAddToList: () -> Unit, on
             Column(Modifier.padding(20.dp).weight(1f)) {
                 Text(card.title, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = TodayColors.SpTitle, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(card.description, Modifier.padding(top = 8.dp), fontSize = 13.sp, color = TodayColors.SpBody, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Box(Modifier.padding(top = 12.dp).height(34.dp)) {
+                Box(Modifier.padding(top = 12.dp).fillMaxWidth().height(48.dp)) {
                     val comp = card.comparison
                     val prog = card.progress
                     if (comp != null) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column {
-                                Text(comp.fromLabel.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = TodayColors.SpMuted)
-                                Text(comp.fromPrice, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TodayColors.SpTitle, textDecoration = TextDecoration.LineThrough)
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(comp.fromLabel.uppercase(), fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.SemiBold, color = TodayColors.SpMuted)
+                                Text(comp.fromPrice, fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, color = TodayColors.SpTitle, textDecoration = TextDecoration.LineThrough, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                             Text("→", Modifier.padding(horizontal = 12.dp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TodayColors.SpMuted)
-                            Column {
-                                Text(comp.toLabel.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = TodayColors.SpGreen)
-                                Text(comp.toPrice, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TodayColors.SpGreen)
+                            Column(Modifier.weight(1f)) {
+                                Text(comp.toLabel.uppercase(), fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.SemiBold, color = TodayColors.SpGreen)
+                                Text(comp.toPrice, fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, color = TodayColors.SpGreen, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     } else if (prog != null) {
@@ -112,7 +117,7 @@ internal fun TodaySmartPickCard(card: SmartPickCard, onAddToList: () -> Unit, on
                 Row(Modifier.height(40.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     val label = if (card.action == SmartPickAction.AddToList && justAdded) "Added" else card.cta
                     Text(label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = TodayColors.SpRed, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false))
+                        modifier = Modifier.weight(1f))
                     Text("→", fontSize = 14.sp, color = TodayColors.SpRed)
                 }
             }

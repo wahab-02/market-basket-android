@@ -1,16 +1,19 @@
 package ai.algo1.marketbasket.nav
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -20,41 +23,64 @@ import androidx.navigation.compose.rememberNavController
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
-    Scaffold(
-        bottomBar = {
-            val current by navController.currentBackStackEntryAsState()
-            NavigationBar {
-                Destination.entries.forEach { dest ->
-                    val selected = current?.destination?.hierarchy?.any { it.route == dest.route } == true
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = { navController.navigateTab(dest) },
-                        icon = { Icon(dest.icon, contentDescription = dest.label) },
-                        label = { Text(dest.label) },
-                    )
-                }
-            }
-        },
-    ) { padding ->
-        NavHost(
-            navController = navController,
-            startDestination = Destination.START.route,
-            modifier = Modifier.fillMaxSize().padding(padding),
-        ) {
-            Destination.entries.forEach { dest ->
-                composable(dest.route) {
-                    when (dest) {
-                        Destination.Today -> ai.algo1.marketbasket.feature.today.TodayRoute(
-                            onOpenList = { navController.navigateTab(Destination.List) },
-                            onOpenDeals = { navController.navigateTab(Destination.Deals) },
+    val listSearchOpen = remember { mutableStateOf(false) }
+    val current by navController.currentBackStackEntryAsState()
+    val selectedDestination = Destination.entries.firstOrNull { dest ->
+        current?.destination?.hierarchy?.any { it.route == dest.route } == true
+    } ?: Destination.START
+
+    Box(Modifier.fillMaxSize().background(marketBasketAppBackground)) {
+        Scaffold(
+            containerColor = marketBasketAppBackground,
+            topBar = {
+                when {
+                    selectedDestination.showsMarketBasketHeader() -> {
+                        MarketBasketHeader(
+                            onSearchClick = {
+                                if (selectedDestination == Destination.List) {
+                                    listSearchOpen.value = !listSearchOpen.value
+                                }
+                            },
                         )
-                        Destination.List -> ai.algo1.marketbasket.feature.list.ListRoute()
-                        Destination.Deals -> ai.algo1.marketbasket.feature.deals.DealsRoute()
-                        else -> PlaceholderScreen(dest.label)
+                    }
+                    selectedDestination.showsCompactHeader() -> {
+                        MarketBasketCompactHeader()
+                    }
+                }
+            },
+        ) { padding ->
+            NavHost(
+                navController = navController,
+                startDestination = Destination.START.route,
+                modifier = Modifier.fillMaxSize().padding(padding),
+            ) {
+                Destination.entries.forEach { dest ->
+                    composable(dest.route) {
+                        when (dest) {
+                            Destination.Today -> ai.algo1.marketbasket.feature.today.TodayRoute(
+                                onOpenList = { navController.navigateTab(Destination.List) },
+                                onOpenDeals = { navController.navigateTab(Destination.Deals) },
+                            )
+                            Destination.List -> ai.algo1.marketbasket.feature.list.ListRoute(
+                                searchOpen = listSearchOpen.value,
+                                onSearchClose = { listSearchOpen.value = false },
+                            )
+                            Destination.Deals -> ai.algo1.marketbasket.feature.deals.DealsRoute()
+                            else -> PlaceholderScreen(dest.label)
+                        }
                     }
                 }
             }
         }
+
+        FloatingBottomNav(
+            selected = selectedDestination,
+            onDestinationClick = { dest -> navController.navigateTab(dest) },
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+        FloatingChatLauncher(
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 28.dp, bottom = 104.dp),
+        )
     }
 }
 

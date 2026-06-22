@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -35,6 +38,15 @@ import ai.algo1.marketbasket.core.domain.today.CommunityList
 import ai.algo1.marketbasket.feature.today.R
 import ai.algo1.marketbasket.feature.today.TodayColors
 import ai.algo1.marketbasket.feature.today.TodayImages
+
+private fun Modifier.todayCardShadow(): Modifier =
+    shadow(18.dp, ambientColor = Color(0x14080816), spotColor = Color(0x14080816))
+
+private fun Modifier.recipeCardShadow(): Modifier =
+    shadow(16.dp, ambientColor = Color(0x12111116), spotColor = Color(0x12111116))
+
+private fun Modifier.communityCardShadow(): Modifier =
+    shadow(18.dp, RoundedCornerShape(9.dp), ambientColor = Color(0x1F080816), spotColor = Color(0x1F080816))
 
 @Composable
 internal fun ChevronRightIcon(modifier: Modifier = Modifier) {
@@ -57,8 +69,10 @@ internal fun TodayMetric(value: Int, label: String, highlight: Boolean = false, 
         Text(
             text = label.uppercase(),
             modifier = Modifier.padding(top = 8.dp),
-            fontSize = 11.sp, fontWeight = FontWeight.Bold,
-            letterSpacing = 0.16.em, color = TodayColors.Ink.copy(alpha = 0.42f),
+            fontSize = 10.sp, fontWeight = FontWeight.Bold,
+            letterSpacing = 0.1.em, color = TodayColors.Ink.copy(alpha = 0.42f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -68,11 +82,11 @@ internal fun DealsSavingsCard(savingsTotal: String, saleCountLabel: String, onCl
     Surface(
         onClick = onClick,
         color = Color.White,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().todayCardShadow(),
     ) {
         Box {
             Box(Modifier.fillMaxWidth().height(3.dp).background(TodayColors.Red)) // top border
-            Column(Modifier.padding(20.dp)) {
+            Column(Modifier.padding(20.dp).padding(end = 118.dp)) {
                 Text(
                     "DEALS FOR YOUR LIST",
                     fontSize = 11.sp, fontWeight = FontWeight.Bold,
@@ -97,6 +111,7 @@ internal fun DealsSavingsCard(savingsTotal: String, saleCountLabel: String, onCl
                     saleCountLabel,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                     fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TodayColors.Green,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
             ChevronRightIcon(Modifier.align(Alignment.CenterEnd).padding(end = 20.dp))
@@ -108,7 +123,7 @@ internal fun DealsSavingsCard(savingsTotal: String, saleCountLabel: String, onCl
 internal fun ListStatsCard(
     itemCount: Int, categoryCount: Int, saleCount: Int, tripMinutes: Int, onClick: () -> Unit,
 ) {
-    Surface(onClick = onClick, color = Color.White, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+    Surface(onClick = onClick, color = Color.White, modifier = Modifier.fillMaxWidth().padding(top = 16.dp).todayCardShadow()) {
         Box {
             Column(Modifier.padding(20.dp)) {
                 Text(
@@ -116,12 +131,12 @@ internal fun ListStatsCard(
                     fontSize = 11.sp, fontWeight = FontWeight.Bold,
                     letterSpacing = 0.28.em, color = TodayColors.Ink.copy(alpha = 0.58f), maxLines = 1,
                 )
-                Row(Modifier.padding(top = 16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TodayMetric(itemCount, "Items")
+                Row(Modifier.padding(top = 16.dp).fillMaxWidth().padding(end = 28.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    TodayMetric(itemCount, "Items", modifier = Modifier.weight(1f))
                     Box(Modifier.height(48.dp).width(1.dp).background(TodayColors.MetricDivider))
-                    TodayMetric(categoryCount, "Categories")
+                    TodayMetric(categoryCount, "Categories", modifier = Modifier.weight(1.12f).padding(start = 12.dp))
                     Box(Modifier.height(48.dp).width(1.dp).background(TodayColors.MetricDivider))
-                    TodayMetric(saleCount, "On sale", highlight = true)
+                    TodayMetric(saleCount, "On sale", highlight = true, modifier = Modifier.weight(1f).padding(start = 12.dp))
                 }
             }
             Surface(
@@ -132,6 +147,7 @@ internal fun ListStatsCard(
                     "$tripMinutes min trip",
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TodayColors.Ink.copy(alpha = 0.64f),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
             ChevronRightIcon(Modifier.align(Alignment.CenterEnd).padding(end = 20.dp))
@@ -141,10 +157,10 @@ internal fun ListStatsCard(
 
 @Composable
 internal fun TodayRecipeCard(onClick: () -> Unit) {
-    Surface(onClick = onClick, color = Color.White, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+    Surface(onClick = onClick, color = Color.White, modifier = Modifier.fillMaxWidth().padding(top = 16.dp).recipeCardShadow()) {
         Box {
             Box(Modifier.padding(start = 0.dp, top = 24.dp).height(22.dp).width(4.dp).background(TodayColors.SpGreen))
-            Column(Modifier.padding(16.dp)) {
+            Column(Modifier.padding(16.dp).padding(end = 26.dp)) {
                 Row {
                     Image(
                         painter = painterResource(R.drawable.today_chicken_alfredo),
@@ -152,9 +168,9 @@ internal fun TodayRecipeCard(onClick: () -> Unit) {
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.size(width = 48.dp, height = 47.dp).background(TodayColors.SpImageBg),
                     )
-                    Column(Modifier.padding(start = 10.dp)) {
+                    Column(Modifier.padding(start = 10.dp).weight(1f)) {
                         Text("Chicken Alfredo", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TodayColors.SpTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text("You have 8 of 10 ingredients.\n2 missing items are on sale.", fontSize = 12.sp, color = TodayColors.SpBody)
+                        Text("You have 8 of 10 ingredients.\n2 missing items are on sale.", fontSize = 12.sp, color = TodayColors.SpBody, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                 }
                 Box(Modifier.padding(top = 10.dp).fillMaxWidth().height(1.dp).background(TodayColors.SpHairline))
@@ -170,7 +186,7 @@ internal fun TodayRecipeCard(onClick: () -> Unit) {
 
 @Composable
 internal fun CommunitySuggestionCard(list: CommunityList, onShop: () -> Unit) {
-    Surface(color = TodayColors.Ink, shape = RoundedCornerShape(9.dp), modifier = Modifier.fillMaxWidth().height(246.dp)) {
+    Surface(color = TodayColors.Ink, shape = RoundedCornerShape(9.dp), modifier = Modifier.fillMaxWidth().height(246.dp).communityCardShadow()) {
         Box {
             Image(
                 painter = painterResource(TodayImages.community(list.cardImageKey)),
@@ -185,17 +201,17 @@ internal fun CommunitySuggestionCard(list: CommunityList, onShop: () -> Unit) {
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         Modifier.size(48.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center,
                     ) { Text(list.icon, fontSize = 26.sp) }
-                    Column(Modifier.padding(start = 12.dp)) {
+                    Column(Modifier.padding(start = 12.dp).weight(1f)) {
                         Text(list.title, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(list.description, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color.White.copy(alpha = 0.88f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
-                Surface(onClick = onShop, color = TodayColors.CommunityRed, shape = CircleShape, modifier = Modifier.height(34.dp)) {
+                Surface(onClick = onShop, color = TodayColors.CommunityRed, shape = CircleShape, modifier = Modifier.height(34.dp).padding(start = 12.dp)) {
                     Box(Modifier.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
                         Text("Shop it", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                     }
@@ -210,12 +226,13 @@ internal fun CreateCommunityListCard() {
     Surface(color = TodayColors.CreateCardBg, shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth().padding(top = 24.dp)) {
         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Want to create your own list?", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                Text("Want to create your own list?", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black, maxLines = 3, overflow = TextOverflow.Ellipsis)
                 Text(
                     "Share your list with the community and inspire other shoppers.",
                     modifier = Modifier.padding(top = 16.dp), fontSize = 17.sp, fontWeight = FontWeight.Medium, color = Color.Black,
+                    maxLines = 3, overflow = TextOverflow.Ellipsis,
                 )
-                Surface(color = TodayColors.CommunityRed, shape = CircleShape, modifier = Modifier.padding(top = 20.dp).height(42.dp)) {
+                Surface(color = TodayColors.CommunityRed, shape = CircleShape, modifier = Modifier.padding(top = 20.dp).height(42.dp).defaultMinSize(minWidth = 126.dp)) {
                     Box(Modifier.padding(horizontal = 20.dp), contentAlignment = Alignment.Center) {
                         Text("Create a list", fontSize = 17.sp, fontWeight = FontWeight.Medium, color = Color.White)
                     }
@@ -224,7 +241,7 @@ internal fun CreateCommunityListCard() {
             Image(
                 painter = painterResource(R.drawable.community_createlist),
                 contentDescription = null, contentScale = ContentScale.Fit,
-                modifier = Modifier.weight(0.8f),
+                modifier = Modifier.weight(0.72f).widthIn(max = 172.dp),
             )
         }
     }
