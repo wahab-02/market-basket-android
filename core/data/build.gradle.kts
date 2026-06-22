@@ -25,6 +25,7 @@ android {
         buildConfigField("String", "SUPABASE_URL", "\"${cfg("SUPABASE_URL")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${cfg("SUPABASE_ANON_KEY")}\"")
         buildConfigField("String", "BACKEND_BASE_URL", "\"${cfg("BACKEND_BASE_URL")}\"")
+        buildConfigField("String", "WHATSAPP_NUMBER", "\"${cfg("WHATSAPP_NUMBER")}\"")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

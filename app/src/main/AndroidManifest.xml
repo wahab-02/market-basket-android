@@ -21,7 +21,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="market-basket.example.com" />
+                <data android:scheme="https" android:host="algo1-webhook.vercel.app" />
             </intent-filter>
         </activity>
     </application>
