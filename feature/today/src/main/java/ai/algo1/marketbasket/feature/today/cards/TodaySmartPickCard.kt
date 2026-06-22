@@ -61,13 +61,24 @@ internal fun TodaySmartPickCard(card: SmartPickCard, onAddToList: () -> Unit, on
                         Text(it, Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TodayColors.SpRed)
                     }
                 }
-                Surface(color = if (card.tagColor == SmartPickColor.Red && card.tag != "From your ideas") tagColor else Color.White, modifier = Modifier.align(Alignment.TopStart).padding(12.dp)) {
-                    Text(
-                        card.tag.uppercase(),
-                        Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                        color = if (card.tagColor == SmartPickColor.Red && card.tag != "From your ideas") Color.White else tagColor,
-                    )
+                val redFillTag = card.tagColor == SmartPickColor.Red && card.tag != "From your ideas"
+                Surface(color = if (redFillTag) tagColor else Color.White, modifier = Modifier.align(Alignment.TopStart).padding(12.dp)) {
+                    if (redFillTag) {
+                        Text(
+                            card.tag.uppercase(),
+                            Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                        )
+                    } else {
+                        Row(
+                            Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Box(Modifier.height(2.dp).width(12.dp).background(tagColor)) // web: h-0.5 w-3 leading dash
+                            Text(card.tag.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = tagColor)
+                        }
+                    }
                 }
             }
             Column(Modifier.padding(20.dp).weight(1f)) {
