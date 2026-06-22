@@ -28,13 +28,7 @@ fun AppNavHost() {
                     val selected = current?.destination?.hierarchy?.any { it.route == dest.route } == true
                     NavigationBarItem(
                         selected = selected,
-                        onClick = {
-                            navController.navigate(dest.route) {
-                                popUpTo(Destination.START.route) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
+                        onClick = { navController.navigateTab(dest) },
                         icon = { Icon(dest.icon, contentDescription = dest.label) },
                         label = { Text(dest.label) },
                     )
@@ -50,6 +44,10 @@ fun AppNavHost() {
             Destination.entries.forEach { dest ->
                 composable(dest.route) {
                     when (dest) {
+                        Destination.Today -> ai.algo1.marketbasket.feature.today.TodayRoute(
+                            onOpenList = { navController.navigateTab(Destination.List) },
+                            onOpenDeals = { navController.navigateTab(Destination.Deals) },
+                        )
                         Destination.List -> ai.algo1.marketbasket.feature.list.ListRoute()
                         Destination.Deals -> ai.algo1.marketbasket.feature.deals.DealsRoute()
                         else -> PlaceholderScreen(dest.label)
@@ -63,4 +61,12 @@ fun AppNavHost() {
 @Composable
 private fun PlaceholderScreen(label: String) {
     Text(text = label, modifier = Modifier.fillMaxSize().wrapContentSize())
+}
+
+private fun androidx.navigation.NavController.navigateTab(dest: Destination) {
+    navigate(dest.route) {
+        popUpTo(Destination.START.route) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
 }

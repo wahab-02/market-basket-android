@@ -16,6 +16,6 @@ enum class Destination(val route: String, val label: String, val icon: ImageVect
     You("you", "You", Icons.Filled.Person);
 
     companion object {
-        val START = List
+        val START = Today
     }
 }
