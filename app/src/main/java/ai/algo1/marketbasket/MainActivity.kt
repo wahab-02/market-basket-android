@@ -1,5 +1,8 @@
 package ai.algo1.marketbasket
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,7 +15,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ai.algo1.marketbasket.core.data.BuildConfig
 import ai.algo1.marketbasket.core.designsystem.MarketBasketTheme
+import ai.algo1.marketbasket.core.domain.connection.ConnectionState
+import ai.algo1.marketbasket.core.domain.connection.WhatsAppConnect
+import ai.algo1.marketbasket.feature.onboarding.WelcomeScreen
 import ai.algo1.marketbasket.nav.AppNavHost
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -22,15 +29,34 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Inbound App Link: https://<host>/?u=<publicId>
+        // Inbound App Link: https://algo1-webhook.vercel.app/?u=<publicId>
         val inbound = intent.data?.getQueryParameter("u")
         appViewModel.bootstrap(inbound)
         setContent {
             MarketBasketTheme {
-                // Gate initial render on identity bootstrap + first list load (mirrors the web app's loading flag).
-                val ready by appViewModel.ready.collectAsStateWithLifecycle()
-                if (ready) AppNavHost() else LoadingScreen()
+                val state by appViewModel.connectionState.collectAsStateWithLifecycle()
+                val publicId by appViewModel.publicId.collectAsStateWithLifecycle()
+                when (state) {
+                    ConnectionState.Loading -> LoadingScreen()
+                    ConnectionState.Unconnected ->
+                        WelcomeScreen(onConnect = { publicId?.let { openWhatsApp(it) } })
+                    ConnectionState.Connected -> AppNavHost()
+                }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        appViewModel.recheckConnection()
+    }
+
+    private fun openWhatsApp(publicId: String) {
+        val uri = WhatsAppConnect.connectUri(BuildConfig.WHATSAPP_NUMBER, publicId)
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
+        } catch (e: ActivityNotFoundException) {
+            // No browser/WhatsApp handler; nothing to do — the user can retry.
         }
     }
 }
