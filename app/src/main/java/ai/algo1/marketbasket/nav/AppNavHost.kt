@@ -82,6 +82,10 @@ fun AppNavHost() {
         FloatingChatLauncher(
             modifier = Modifier.align(Alignment.BottomEnd).padding(end = 28.dp, bottom = 104.dp),
         )
+
+        if (selectedDestination == Destination.Today) {
+            ai.algo1.marketbasket.feature.onboarding.HomeIntroOverlay()
+        }
     }
 }
 

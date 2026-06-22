@@ -19,11 +19,13 @@ class LocalStore @Inject constructor(@ApplicationContext private val context: Co
         val PUBLIC_ID = stringPreferencesKey("public_id")
         val LIST_CODE = stringPreferencesKey("list_code")
         val CONNECTED = booleanPreferencesKey("connected")
+        val HOME_INTRO_SEEN = booleanPreferencesKey("home_intro_seen")
     }
 
     val publicId: Flow<String?> = context.dataStore.data.map { it[Keys.PUBLIC_ID] }
     val listCode: Flow<String?> = context.dataStore.data.map { it[Keys.LIST_CODE] }
     val connected: Flow<Boolean> = context.dataStore.data.map { it[Keys.CONNECTED] ?: false }
+    val homeIntroSeen: Flow<Boolean> = context.dataStore.data.map { it[Keys.HOME_INTRO_SEEN] ?: false }
 
     suspend fun setPublicId(value: String) {
         context.dataStore.edit { it[Keys.PUBLIC_ID] = value }
@@ -35,5 +37,9 @@ class LocalStore @Inject constructor(@ApplicationContext private val context: Co
 
     suspend fun setConnected(value: Boolean) {
         context.dataStore.edit { it[Keys.CONNECTED] = value }
+    }
+
+    suspend fun setHomeIntroSeen() {
+        context.dataStore.edit { it[Keys.HOME_INTRO_SEEN] = true }
     }
 }
