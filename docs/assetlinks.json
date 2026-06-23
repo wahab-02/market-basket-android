@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ai.algo1.marketbasket",
+      "sha256_cert_fingerprints": [
+        "BC:00:C8:25:39:2D:9A:E6:02:24:34:24:E6:50:DB:74:04:01:8B:84:2B:72:B6:B0:BC:05:01:63:D9:AC:12:1A"
+      ]
+    }
+  }
+]

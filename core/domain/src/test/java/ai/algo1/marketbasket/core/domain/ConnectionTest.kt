@@ -29,17 +29,17 @@ class ConnectionTest {
         assertFalse(UserProfile("Sam", "   ", null).phoneConnected)
     }
 
-    @Test fun connectMessage_isVerbatimWithBlankLine() {
+    @Test fun connectMessage_isPlainWebDefault() {
         assertEquals(
-            "Tap the send button to connect and get started.\n\nConnect list 123",
-            WhatsAppConnect.connectMessage("123"),
+            "Tap the send button to connect and get started.",
+            WhatsAppConnect.connectMessage(),
         )
     }
 
-    @Test fun connectUri_encodesSpacesAndNewlines() {
+    @Test fun connectUri_encodesPlainMessage() {
         assertEquals(
-            "https://wa.me/17177449812?text=Tap%20the%20send%20button%20to%20connect%20and%20get%20started.%0A%0AConnect%20list%20123",
-            WhatsAppConnect.connectUri("17177449812", "123"),
+            "https://wa.me/17177449812?text=Tap%20the%20send%20button%20to%20connect%20and%20get%20started.",
+            WhatsAppConnect.connectUri("17177449812"),
         )
     }
 
