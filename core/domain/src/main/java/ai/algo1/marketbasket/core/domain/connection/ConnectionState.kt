@@ -5,10 +5,9 @@ enum class ConnectionState { Loading, Unconnected, Connected }
 
 object Connection {
     /**
-     * The Android gate. Unlike the web (which keys on a `?u=` URL param that arrives from the
-     * webhook), Android mints the publicId locally, so it is "connected" once an app_users row
-     * exists for it — or once we have cached that it connected before (survives offline launches).
+     * The Android gate is connected when an app_users row exists. A cached connection only keeps
+     * the app open for transient row-check failures; it must not override a confirmed missing row.
      */
-    fun resolve(cachedConnected: Boolean, rowExists: Boolean): ConnectionState =
-        if (cachedConnected || rowExists) ConnectionState.Connected else ConnectionState.Unconnected
+    fun resolve(cachedConnected: Boolean, rowExists: Boolean, rowCheckFailed: Boolean = false): ConnectionState =
+        if (rowExists || (cachedConnected && rowCheckFailed)) ConnectionState.Connected else ConnectionState.Unconnected
 }

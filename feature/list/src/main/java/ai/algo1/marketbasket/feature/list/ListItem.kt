@@ -188,7 +188,7 @@ fun ListItem(
             ) {
                 Canvas(modifier = Modifier.size(28.dp)) {
                     if (item.checked) {
-                        drawCircle(color = Color(0xFF2E7D32))
+                        drawCircle(color = MarketBasketColors.CheckboxChecked)
                     } else {
                         drawCircle(
                             color = Color(0xFFBBBBBB),

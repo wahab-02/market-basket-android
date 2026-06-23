@@ -26,6 +26,15 @@ data class InboundLink(
     val marketBasketImport: String?,
 )
 
+fun InboundLink.resolvePublicId(stored: String?, current: String?): String? {
+    publicId?.trim()?.ifBlank { null }?.let { return it }
+    if (!marketBasketImport.isNullOrBlank()) {
+        current?.trim()?.ifBlank { null }?.let { return it }
+        stored?.trim()?.ifBlank { null }?.let { return it }
+    }
+    return null
+}
+
 @HiltViewModel
 class AppViewModel @Inject constructor(
     private val localStore: LocalStore,
@@ -67,9 +76,9 @@ class AppViewModel @Inject constructor(
      * e.g. the WhatsApp connect-return link `…/?u=<publicId>&linked=whatsapp`.
      */
     fun onInbound(inbound: InboundLink) {
-        val id = inbound.publicId?.trim()?.ifBlank { null } ?: return
         viewModelScope.launch {
             val stored = localStore.publicId.first()
+            val id = inbound.resolvePublicId(stored = stored, current = resolvedPublicId) ?: return@launch
             if (id != resolvedPublicId) realtimeStarted = false   // switching lists → allow realtime to (re)start
             adopt(id, stored, inbound.marketBasketImport)
         }
@@ -97,30 +106,36 @@ class AppViewModel @Inject constructor(
         evaluating = true
         try {
             val cached = localStore.connected.first()
+            var rowCheckFailed = false
             val rowExists = try {
                 listRepository.load(publicId)
             } catch (e: Exception) {
-                false   // offline / transient: fall back to the cached flag below
+                rowCheckFailed = true
+                false
             }
-            val connected = cached || rowExists
-            if (connected) {
+            val connectionState = Connection.resolve(
+                cachedConnected = cached,
+                rowExists = rowExists,
+                rowCheckFailed = rowCheckFailed,
+            )
+            if (connectionState == ConnectionState.Connected) {
                 if (rowExists && !cached) localStore.setConnected(true)
                 if (rowExists && !realtimeStarted) {
                     listRepository.observeRealtime(viewModelScope)
                     realtimeStarted = true
                 }
+            } else if (!rowCheckFailed && cached) {
+                localStore.setConnected(false)
             }
-            _connectionState.value = if (connected) ConnectionState.Connected else ConnectionState.Unconnected
+            _connectionState.value = connectionState
         } finally {
             evaluating = false
         }
     }
 
     private suspend fun importMarketBasket(publicId: String, encodedPayload: String): Boolean {
-        val items = decodeMarketBasketImport(encodedPayload)
-        if (items.isEmpty()) return false
-
         return try {
+            val items = decodeMarketBasketImport(encodedPayload)
             apiService.importMarketBasket(ImportRequest(publicId = publicId, items = items))
             true
         } catch (e: Exception) {

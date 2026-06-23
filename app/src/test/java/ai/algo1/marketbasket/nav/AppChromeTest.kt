@@ -1,5 +1,6 @@
 package ai.algo1.marketbasket.nav
 
+import ai.algo1.marketbasket.R
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -11,5 +12,11 @@ class AppChromeTest {
             primaryBottomNavDestinations,
         )
         assertEquals(Destination.You, profileBottomNavDestination)
+    }
+
+    @Test
+    fun bottomNavUsesSourceAssetsForDealsAndIdeas() {
+        assertEquals(R.drawable.deals, sourceBottomNavImageRes(Destination.Deals))
+        assertEquals(R.drawable.recipes, sourceBottomNavImageRes(Destination.Ideas))
     }
 }

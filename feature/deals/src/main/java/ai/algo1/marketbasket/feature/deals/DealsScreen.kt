@@ -1,5 +1,6 @@
 package ai.algo1.marketbasket.feature.deals
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -11,14 +12,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ai.algo1.marketbasket.core.designsystem.MarketBasketColors
 import ai.algo1.marketbasket.core.domain.deals.Deal
 import ai.algo1.marketbasket.core.domain.util.ItemName
+import kotlinx.coroutines.launch
 
 private val DealRed = Color(0xFFC7353A)
 private val DealsBackground = Color(0xFFF1F1F1)
@@ -40,6 +45,7 @@ fun DealsRoute(viewModel: DealsViewModel = hiltViewModel()) {
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun DealsScreen(state: DealsUiState, onAdd: (Deal) -> Unit) {
     if (state.sections.isEmpty()) {
         Text(
@@ -50,38 +56,62 @@ fun DealsScreen(state: DealsUiState, onAdd: (Deal) -> Unit) {
         return
     }
     var selectedCategory by remember(state.sections) { mutableStateOf(state.sections.first().category) }
+    val listState = rememberLazyListState()
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+    val categoryIndices = remember(state.sections) {
+        buildMap {
+            var index = 1 // sticky chip header is item 0.
+            state.sections.forEach { section ->
+                put(section.category, index)
+                index += 1 + section.deals.size
+            }
+        }
+    }
+
+    LaunchedEffect(listState, categoryIndices) {
+        snapshotFlow { listState.firstVisibleItemIndex }
+            .collect { firstVisible ->
+                categoryIndices.entries.lastOrNull { it.value <= firstVisible }?.key?.let { active ->
+                    selectedCategory = active
+                }
+            }
+    }
 
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize().background(DealsBackground),
         contentPadding = PaddingValues(bottom = 142.dp),
     ) {
-        item(key = "category_chips") {
+        stickyHeader(key = "category_chips") {
             DealsCategoryChips(
                 categories = state.sections.map { it.category },
                 selectedCategory = selectedCategory,
-                onCategorySelected = { selectedCategory = it },
+                onCategorySelected = { category ->
+                    selectedCategory = category
+                    categoryIndices[category]?.let { index ->
+                        coroutineScope.launch { listState.animateScrollToItem(index) }
+                    }
+                },
             )
         }
-        state.sections
-            .filter { section -> section.category == selectedCategory || selectedCategory.isBlank() }
-            .forEach { section ->
-                item(key = "h_${section.category}") {
-                    Text(
-                        text = section.category,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp).padding(top = 26.dp, bottom = 22.dp),
-                        fontSize = 21.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF080816),
-                    )
-                }
-                items(section.deals, key = { "${section.category}::${it.itemName}" }) { deal ->
-                    DealCard(
-                        deal = deal,
-                        isAdded = ItemName.normalize(deal.itemName) in state.addedNames,
-                        onAdd = { onAdd(deal) },
-                    )
-                }
+        state.sections.forEach { section ->
+            item(key = "h_${section.category}") {
+                Text(
+                    text = section.category,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp).padding(top = 26.dp, bottom = 22.dp),
+                    fontSize = 21.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF080816),
+                )
             }
+            items(section.deals, key = { "${section.category}::${it.itemName}" }) { deal ->
+                DealCard(
+                    deal = deal,
+                    isAdded = ItemName.normalize(deal.itemName) in state.addedNames,
+                    onAdd = { onAdd(deal) },
+                )
+            }
+        }
     }
 }
 
@@ -96,7 +126,7 @@ private fun DealsCategoryChips(
             .padding(horizontal = 18.dp, vertical = 18.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        categories.take(8).forEach { category ->
+        categories.forEach { category ->
             val selected = category == selectedCategory
             Surface(
                 onClick = { onCategorySelected(category) },

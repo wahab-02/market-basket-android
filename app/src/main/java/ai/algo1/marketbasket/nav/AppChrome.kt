@@ -1,6 +1,9 @@
 package ai.algo1.marketbasket.nav
 
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -14,6 +17,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,7 +45,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -68,6 +75,8 @@ private val BrandRed = Color(0xFFD71920)
 private val BrandInk = Color(0xFF080816)
 private val AppBackground = Color(0xFFF7F7F7)
 private val HeaderButtonBorder = Color(0xFFF2F2F2)
+private val NavPillEasing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
+private val NavPopEasing = CubicBezierEasing(0.34f, 1.56f, 0.64f, 1f)
 
 @Composable
 internal fun MarketBasketHeader(
@@ -140,18 +149,12 @@ internal fun MarketBasketCompactHeader(
                     modifier = Modifier.size(16.dp),
                 )
             }
-            Icon(
-                imageVector = Icons.Filled.Search,
-                contentDescription = "Search",
-                tint = BrandRed,
-                modifier = Modifier.size(24.dp).clickable(onClick = onSearchClick).padding(2.dp),
-            )
-            Icon(
-                imageVector = Icons.Filled.Menu,
-                contentDescription = "Menu",
-                tint = BrandRed,
-                modifier = Modifier.size(28.dp).clickable(onClick = onMenuClick).padding(2.dp),
-            )
+            HeaderActionButton(onClick = onSearchClick) {
+                Icon(Icons.Filled.Search, contentDescription = "Search", tint = BrandRed, modifier = Modifier.size(24.dp))
+            }
+            HeaderActionButton(onClick = onMenuClick) {
+                Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = BrandRed, modifier = Modifier.size(26.dp))
+            }
         }
     }
 }
@@ -237,7 +240,7 @@ private fun HeaderActionButton(onClick: () -> Unit, content: @Composable () -> U
                 scaleX = scale.value
                 scaleY = scale.value
             }
-            .shadow(12.dp, CircleShape, ambientColor = Color(0x1F080816), spotColor = Color(0x1F080816))
+            .shadow(18.dp, CircleShape, ambientColor = Color(0x33080816), spotColor = Color(0x33080816))
             .clickable(interactionSource = interactionSource, indication = null, onClick = onClick),
     ) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -252,6 +255,7 @@ internal fun FloatingBottomNav(
     onDestinationClick: (Destination) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val selectedPrimaryIndex = primaryBottomNavDestinations.indexOf(selected)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -262,19 +266,53 @@ internal fun FloatingBottomNav(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Surface(
-            color = Color.White.copy(alpha = 0.92f),
+            color = Color.White.copy(alpha = 0.86f),
             shape = RoundedCornerShape(35.dp),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f)),
-            modifier = Modifier.weight(1f).fillMaxHeight().shadow(30.dp, RoundedCornerShape(35.dp), ambientColor = Color(0x1F080816), spotColor = Color(0x1F080816)),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.72f)),
+            modifier = Modifier.weight(1f).fillMaxHeight().shadow(40.dp, RoundedCornerShape(35.dp), ambientColor = Color(0x33080816), spotColor = Color(0x33080816)),
         ) {
-            Row(Modifier.fillMaxSize().padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                primaryBottomNavDestinations.forEach { destination ->
-                    FloatingNavItem(
-                        destination = destination,
-                        selected = selected == destination,
-                        onClick = { onDestinationClick(destination) },
-                        modifier = Modifier.weight(1f),
-                    )
+            BoxWithConstraints(Modifier.fillMaxSize().padding(4.dp)) {
+                val itemWidth = maxWidth / primaryBottomNavDestinations.size
+                val pillOffset = animateDpAsState(
+                    targetValue = if (selectedPrimaryIndex >= 0) itemWidth * selectedPrimaryIndex.toFloat() else 0.dp,
+                    animationSpec = tween(500, easing = NavPillEasing),
+                    label = "bottom_nav_pill_offset",
+                )
+                val pillAlpha = animateFloatAsState(
+                    targetValue = if (selectedPrimaryIndex >= 0) 1f else 0f,
+                    animationSpec = tween(180),
+                    label = "bottom_nav_pill_alpha",
+                )
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.88f),
+                                    Color.White.copy(alpha = 0.62f),
+                                    Color.White.copy(alpha = 0.8f),
+                                ),
+                            ),
+                            RoundedCornerShape(31.dp),
+                        ),
+                )
+                Box(
+                    modifier = Modifier.offset(x = pillOffset.value)
+                        .width(itemWidth)
+                        .fillMaxHeight()
+                        .alpha(pillAlpha.value)
+                        .shadow(30.dp, RoundedCornerShape(31.dp), ambientColor = Color(0x3D080816), spotColor = Color(0x3D080816))
+                        .background(Color.White, RoundedCornerShape(31.dp)),
+                )
+                Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+                    primaryBottomNavDestinations.forEach { destination ->
+                        FloatingNavItem(
+                            destination = destination,
+                            selected = selected == destination,
+                            onClick = { onDestinationClick(destination) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
         }
@@ -293,10 +331,23 @@ private fun FloatingNavItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val foreground = if (selected) BrandRed else BrandInk.copy(alpha = 0.72f)
+    val foreground = animateColorAsState(
+        targetValue = if (selected) BrandRed else BrandInk.copy(alpha = 0.72f),
+        animationSpec = tween(300),
+        label = "bottom_nav_item_color",
+    )
     val interactionSource = remember { MutableInteractionSource() }
     val pressed = interactionSource.collectIsPressedAsState().value
-    val pressScale = animateFloatAsState(if (pressed) 0.97f else 1f, label = "bottom_nav_item_press_scale")
+    val targetScale = when {
+        pressed -> 0.97f
+        selected -> 1.06f
+        else -> 1f
+    }
+    val pressScale = animateFloatAsState(
+        targetValue = targetScale,
+        animationSpec = tween(260, easing = NavPopEasing),
+        label = "bottom_nav_item_press_scale",
+    )
     Column(
         modifier = modifier
             .fillMaxHeight()
@@ -304,8 +355,6 @@ private fun FloatingNavItem(
                 scaleX = pressScale.value
                 scaleY = pressScale.value
             }
-            .selectedNavPillShadow(selected)
-            .background(if (selected) Color.White else Color.Transparent, RoundedCornerShape(31.dp))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -315,11 +364,11 @@ private fun FloatingNavItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        SourceBottomNavIcon(destination = destination, tint = foreground, selected = selected)
+        SourceBottomNavIcon(destination = destination, tint = foreground.value, selected = selected)
         Spacer(Modifier.height(1.dp))
         Text(
             destination.label,
-            color = foreground,
+            color = foreground.value,
             fontSize = 11.sp,
             lineHeight = 13.sp,
             fontWeight = FontWeight.SemiBold,
@@ -365,15 +414,24 @@ private fun FloatingProfileNavItem(selected: Boolean, onClick: () -> Unit) {
     }
 }
 
-private fun Modifier.selectedNavPillShadow(selected: Boolean): Modifier =
-    if (selected) {
-        shadow(22.dp, RoundedCornerShape(31.dp), ambientColor = Color(0x14080816), spotColor = Color(0x14080816))
-    } else {
-        this
-    }
-
 @Composable
 private fun SourceBottomNavIcon(destination: Destination, tint: Color, selected: Boolean) {
+    val imageRes = sourceBottomNavImageRes(destination)
+    if (imageRes != null) {
+        Image(
+            painter = painterResource(imageRes),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(tint),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(24.dp).graphicsLayer {
+                val scale = if (selected) 1.05f else 1f
+                scaleX = scale
+                scaleY = scale
+            },
+        )
+        return
+    }
+
     val imageVector = remember(destination, tint) {
         when (destination) {
             Destination.Today -> homeNavIcon(tint)
@@ -394,6 +452,13 @@ private fun SourceBottomNavIcon(destination: Destination, tint: Color, selected:
         },
     )
 }
+
+internal fun sourceBottomNavImageRes(destination: Destination): Int? =
+    when (destination) {
+        Destination.Deals -> R.drawable.deals
+        Destination.Ideas -> R.drawable.recipes
+        else -> null
+    }
 
 private fun homeNavIcon(color: Color): ImageVector =
     ImageVector.Builder(defaultWidth = 28.dp, defaultHeight = 28.dp, viewportWidth = 34f, viewportHeight = 34f).apply {

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,6 +31,16 @@ fun AppNavHost() {
     val selectedDestination = Destination.entries.firstOrNull { dest ->
         current?.destination?.hierarchy?.any { it.route == dest.route } == true
     } ?: Destination.START
+    val openListSearch = {
+        listSearchOpen.value = true
+        navController.navigateTab(Destination.List)
+    }
+
+    LaunchedEffect(selectedDestination) {
+        if (selectedDestination != Destination.List) {
+            listSearchOpen.value = false
+        }
+    }
 
     Box(Modifier.fillMaxSize().background(marketBasketAppBackground)) {
         Scaffold(
@@ -38,15 +49,11 @@ fun AppNavHost() {
                 when {
                     selectedDestination.showsMarketBasketHeader() -> {
                         MarketBasketHeader(
-                            onSearchClick = {
-                                if (selectedDestination == Destination.List) {
-                                    listSearchOpen.value = !listSearchOpen.value
-                                }
-                            },
+                            onSearchClick = openListSearch,
                         )
                     }
                     selectedDestination.showsCompactHeader() -> {
-                        MarketBasketCompactHeader()
+                        MarketBasketCompactHeader(onSearchClick = openListSearch)
                     }
                 }
             },
@@ -82,16 +89,19 @@ fun AppNavHost() {
 
         FloatingBottomNav(
             selected = selectedDestination,
-            onDestinationClick = { dest -> navController.navigateTab(dest) },
+            onDestinationClick = { dest ->
+                if (dest != Destination.List) {
+                    listSearchOpen.value = false
+                }
+                navController.navigateTab(dest)
+            },
             modifier = Modifier.align(Alignment.BottomCenter),
         )
         FloatingChatLauncher(
             modifier = Modifier.align(Alignment.BottomEnd).padding(end = 28.dp, bottom = 104.dp),
         )
 
-        if (selectedDestination == Destination.Today) {
-            ai.algo1.marketbasket.feature.onboarding.HomeIntroOverlay()
-        }
+        // HomeIntroOverlay is intentionally disabled for now; keep the component for later.
     }
 }
 

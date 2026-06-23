@@ -1,5 +1,13 @@
 package ai.algo1.marketbasket.feature.list
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -42,6 +50,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,6 +74,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ai.algo1.marketbasket.core.designsystem.MarketBasketColors
 import ai.algo1.marketbasket.core.domain.model.CatalogProduct
 import coil.compose.AsyncImage
+
+private val SpringEasing = CubicBezierEasing(0.34f, 1.56f, 0.64f, 1f)
 
 @Composable
 fun ListRoute(
@@ -115,9 +126,16 @@ fun ListScreen(
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF7F7F7))) {
         ListSaleBanner()
 
-        if (searchOpen) {
+        AnimatedVisibility(
+            visible = searchOpen,
+            enter = slideInVertically(animationSpec = tween(260, easing = SpringEasing), initialOffsetY = { -it }) +
+                fadeIn(animationSpec = tween(180)),
+            exit = slideOutVertically(animationSpec = tween(180), targetOffsetY = { -it / 2 }) +
+                fadeOut(animationSpec = tween(140)),
+        ) {
             SearchAddRow(
                 query = state.searchQuery,
+                isAlreadyAdded = state.searchQuery.lowercase().trim() in alreadyAddedNames,
                 onQueryChange = onSearchQueryChange,
                 onSubmit = { onAdd(state.searchQuery) },
                 onSearchClose = {
@@ -125,7 +143,8 @@ fun ListScreen(
                     onSearchClose()
                 },
             )
-        } else {
+        }
+        if (!searchOpen) {
             ListHeaderStrip(state = state)
         }
 
@@ -274,9 +293,24 @@ private fun SearchResultItem(product: CatalogProduct, isAlreadyAdded: Boolean, o
 
 @Composable
 private fun AddOrCheckButton(isAdded: Boolean, onAdd: () -> Unit) {
+    val bounceScale = remember { Animatable(1f) }
+    var lastIsAdded by remember { mutableStateOf(isAdded) }
+
+    LaunchedEffect(isAdded) {
+        if (isAdded && !lastIsAdded) {
+            bounceScale.snapTo(1f)
+            bounceScale.animateTo(0.72f, tween(106, easing = SpringEasing))
+            bounceScale.animateTo(1.22f, tween(114, easing = SpringEasing))
+            bounceScale.animateTo(0.94f, tween(84, easing = SpringEasing))
+            bounceScale.animateTo(1f, tween(76, easing = SpringEasing))
+        }
+        lastIsAdded = isAdded
+    }
+
     if (isAdded) {
         Box(
-            modifier = Modifier.size(32.dp).clip(CircleShape).background(Color(0xFF2E7D32)),
+            modifier = Modifier.size(32.dp).scale(bounceScale.value).clip(CircleShape)
+                .background(MarketBasketColors.CheckboxChecked),
             contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Filled.Check, contentDescription = "Added", tint = Color.White, modifier = Modifier.size(16.dp))
@@ -343,9 +377,9 @@ private fun ListHeaderStrip(state: ListUiState) {
         Text(
             "My List ($itemCount)",
             color = Color(0xFF080816),
-            fontSize = 22.sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold,
-            lineHeight = 24.sp,
+            lineHeight = 21.sp,
         )
     }
 }
@@ -353,13 +387,16 @@ private fun ListHeaderStrip(state: ListUiState) {
 @Composable
 private fun SearchAddRow(
     query: String,
+    isAlreadyAdded: Boolean,
     onQueryChange: (String) -> Unit,
     onSubmit: () -> Unit,
     onSearchClose: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().background(Color(0xFFE8E8E8)),
+        modifier = Modifier.fillMaxWidth().background(Color.White)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         TextField(
             value = query,
@@ -370,38 +407,48 @@ private fun SearchAddRow(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onSubmit() }),
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFE8E8E8),
-                unfocusedContainerColor = Color(0xFFE8E8E8),
-                disabledContainerColor = Color(0xFFE8E8E8),
+                focusedContainerColor = Color(0xFFE3E3E3),
+                unfocusedContainerColor = Color(0xFFE3E3E3),
+                disabledContainerColor = Color(0xFFE3E3E3),
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             ),
             shape = RectangleShape,
             trailingIcon = if (query.isNotBlank()) {
                 {
-                    Text(
-                        "Add to list",
-                        color = Color(0xFF2E7D32),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(end = 12.dp).clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = onSubmit,
-                        ),
-                    )
+                    if (isAlreadyAdded) {
+                        Text(
+                            "Added",
+                            color = MarketBasketColors.CheckboxChecked.copy(alpha = 0.5f),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(end = 12.dp),
+                        )
+                    } else {
+                        Text(
+                            "Add to list",
+                            color = MarketBasketColors.CheckboxChecked,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(end = 12.dp).clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onSubmit,
+                            ),
+                        )
+                    }
                 }
             } else null,
         )
         Box(
-            modifier = Modifier.size(56.dp).background(Color(0xFFE8E8E8)).clickable(
+            modifier = Modifier.size(56.dp).background(Color(0xFFE3E3E3)).clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onSearchClose,
             ),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Filled.Close, contentDescription = "Close search", tint = Color(0xFF080816), modifier = Modifier.size(22.dp))
+            Icon(Icons.Filled.Close, contentDescription = "Close search", tint = Color(0xFF080816), modifier = Modifier.size(24.dp))
         }
     }
 }

@@ -19,8 +19,12 @@ class ConnectionTest {
         assertEquals(ConnectionState.Connected, Connection.resolve(cachedConnected = false, rowExists = true))
     }
 
-    @Test fun resolve_connected_whenCachedEvenIfNoRow() {
-        assertEquals(ConnectionState.Connected, Connection.resolve(cachedConnected = true, rowExists = false))
+    @Test fun resolve_unconnected_whenCachedButDbConfirmsNoRow() {
+        assertEquals(ConnectionState.Unconnected, Connection.resolve(cachedConnected = true, rowExists = false, rowCheckFailed = false))
+    }
+
+    @Test fun resolve_connected_whenCachedAndRowCheckFailed() {
+        assertEquals(ConnectionState.Connected, Connection.resolve(cachedConnected = true, rowExists = false, rowCheckFailed = true))
     }
 
     @Test fun userProfile_phoneConnected_reflectsPhonePresence() {
