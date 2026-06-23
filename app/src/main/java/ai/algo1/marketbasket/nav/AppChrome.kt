@@ -104,10 +104,10 @@ internal fun MarketBasketHeader(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 HeaderActionButton(onClick = onSearchClick) {
-                    Icon(Icons.Filled.Search, contentDescription = "Search", tint = BrandInk, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Filled.Search, contentDescription = "Search", tint = BrandInk, modifier = Modifier.size(24.dp))
                 }
                 HeaderActionButton(onClick = onMenuClick) {
-                    Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = BrandRed, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = BrandRed, modifier = Modifier.size(26.dp))
                 }
             }
         }
@@ -232,7 +232,7 @@ private fun HeaderActionButton(onClick: () -> Unit, content: @Composable () -> U
         shape = CircleShape,
         color = Color.White,
         border = BorderStroke(1.dp, HeaderButtonBorder),
-        modifier = Modifier.size(36.dp)
+        modifier = Modifier.size(42.dp)
             .graphicsLayer {
                 scaleX = scale.value
                 scaleY = scale.value

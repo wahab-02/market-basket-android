@@ -4,6 +4,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,8 +26,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -37,22 +42,29 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ai.algo1.marketbasket.core.designsystem.MarketBasketColors
+import ai.algo1.marketbasket.core.domain.model.CatalogProduct
+import coil.compose.AsyncImage
 
 @Composable
 fun ListRoute(
@@ -65,7 +77,11 @@ fun ListRoute(
         state = state,
         searchOpen = searchOpen,
         onSearchClose = onSearchClose,
+        onSearchQueryChange = viewModel::setSearchQuery,
         onAdd = viewModel::addByName,
+        onAddFromCatalog = viewModel::addFromCatalog,
+        onIncrement = viewModel::increment,
+        onDecrement = viewModel::decrement,
         onToggle = viewModel::toggle,
         onDelete = viewModel::delete,
     )
@@ -76,18 +92,24 @@ fun ListScreen(
     state: ListUiState,
     searchOpen: Boolean = false,
     onSearchClose: () -> Unit = {},
+    onSearchQueryChange: (String) -> Unit = {},
     onAdd: (String) -> Unit,
+    onAddFromCatalog: (CatalogProduct) -> Unit = {},
+    onIncrement: (String) -> Unit = {},
+    onDecrement: (String) -> Unit = {},
     onToggle: (String) -> Unit,
     onDelete: (String) -> Unit,
 ) {
     var expandedId by remember { mutableStateOf<String?>(null) }
-    var draft by remember { mutableStateOf("") }
 
-    // Reconcile expanded state with external (realtime) changes: clear a stale id if its item is gone.
     LaunchedEffect(state.categories) {
         if (expandedId != null && state.categories.none { c -> c.items.any { it.id == expandedId } }) {
             expandedId = null
         }
+    }
+
+    val alreadyAddedNames = remember(state.categories) {
+        state.categories.flatMap { it.items }.map { it.name.lowercase().trim() }.toSet()
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF7F7F7))) {
@@ -95,14 +117,11 @@ fun ListScreen(
 
         if (searchOpen) {
             SearchAddRow(
-                draft = draft,
-                onDraftChange = { draft = it },
-                onSubmit = {
-                    onAdd(draft)
-                    draft = ""
-                },
+                query = state.searchQuery,
+                onQueryChange = onSearchQueryChange,
+                onSubmit = { onAdd(state.searchQuery) },
                 onSearchClose = {
-                    draft = ""
+                    onSearchQueryChange("")
                     onSearchClose()
                 },
             )
@@ -110,31 +129,177 @@ fun ListScreen(
             ListHeaderStrip(state = state)
         }
 
-        if (state.categories.isEmpty()) {
-            EmptyListState()
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 142.dp)) {
-                state.categories.forEach { category ->
-                    item(key = "h_${category.id}") {
-                        Text(
-                            text = category.name.uppercase(),
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MarketBasketColors.Primary,
-                        )
+        when {
+            searchOpen && state.searchQuery.isNotBlank() -> {
+                if (state.isSearching) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MarketBasketColors.Primary)
                     }
-                    items(category.items, key = { it.id }) { groceryItem ->
-                        ListItem(
-                            item = groceryItem,
-                            expanded = expandedId == groceryItem.id,
-                            onClick = { expandedId = if (expandedId == groceryItem.id) null else groceryItem.id },
-                            onToggle = { onToggle(groceryItem.id) },
-                            onDelete = { onDelete(groceryItem.id); expandedId = null },
-                        )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 142.dp),
+                    ) {
+                        // Manual add row — typed query as top result
+                        item(key = "manual_add") {
+                            ManualAddResultItem(
+                                query = state.searchQuery,
+                                isAlreadyAdded = state.searchQuery.lowercase().trim() in alreadyAddedNames,
+                                onAdd = { onAdd(state.searchQuery) },
+                            )
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                        }
+                        items(state.searchResults, key = { it.urn }) { product ->
+                            SearchResultItem(
+                                product = product,
+                                isAlreadyAdded = product.name.lowercase().trim() in alreadyAddedNames,
+                                onAdd = { onAddFromCatalog(product) },
+                            )
+                            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF0F0F0)))
+                        }
                     }
                 }
             }
+            state.categories.isEmpty() -> EmptyListState()
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 142.dp),
+                ) {
+                    state.categories.forEach { category ->
+                        item(key = "h_${category.id}") {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().background(Color(0xFFF7F7F7))
+                                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                            ) {
+                                Text(
+                                    text = category.name.uppercase(),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    letterSpacing = 1.sp,
+                                    color = MarketBasketColors.TextSecondary,
+                                )
+                            }
+                        }
+                        items(category.items, key = { it.id }) { groceryItem ->
+                            ListItem(
+                                item = groceryItem,
+                                expanded = expandedId == groceryItem.id,
+                                onClick = { expandedId = if (expandedId == groceryItem.id) null else groceryItem.id },
+                                onToggle = { onToggle(groceryItem.id) },
+                                onDelete = { onDelete(groceryItem.id); expandedId = null },
+                                onIncrement = { onIncrement(groceryItem.id) },
+                                onDecrement = { onDecrement(groceryItem.id) },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ManualAddResultItem(query: String, isAlreadyAdded: Boolean, onAdd: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().background(Color.White)
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier.size(56.dp).clip(RoundedCornerShape(12.dp))
+                .background(MarketBasketColors.ImagePlaceholder),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                query.take(1).uppercase(),
+                color = MarketBasketColors.TextSecondary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+            )
+        }
+        Text(
+            text = query,
+            modifier = Modifier.weight(1f),
+            fontSize = 17.sp,
+            color = MarketBasketColors.TextPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        AddOrCheckButton(isAdded = isAlreadyAdded, onAdd = onAdd)
+    }
+}
+
+@Composable
+private fun SearchResultItem(product: CatalogProduct, isAlreadyAdded: Boolean, onAdd: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().background(Color.White)
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (product.imageUrl != null) {
+            AsyncImage(
+                model = product.imageUrl,
+                contentDescription = null,
+                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(12.dp)),
+                contentScale = ContentScale.Fit,
+            )
+        } else {
+            Box(
+                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(12.dp))
+                    .background(MarketBasketColors.ImagePlaceholder),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    product.name.take(1).uppercase(),
+                    color = MarketBasketColors.TextSecondary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                )
+            }
+        }
+        Text(
+            text = product.name,
+            modifier = Modifier.weight(1f),
+            fontSize = 17.sp,
+            color = MarketBasketColors.TextPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        AddOrCheckButton(isAdded = isAlreadyAdded, onAdd = onAdd)
+    }
+}
+
+@Composable
+private fun AddOrCheckButton(isAdded: Boolean, onAdd: () -> Unit) {
+    if (isAdded) {
+        Box(
+            modifier = Modifier.size(32.dp).clip(CircleShape).background(Color(0xFF2E7D32)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.Check, contentDescription = "Added", tint = Color.White, modifier = Modifier.size(16.dp))
+        }
+    } else {
+        Box(
+            modifier = Modifier.size(32.dp).clip(CircleShape)
+                .background(Color.Transparent)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onAdd,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Canvas(modifier = Modifier.size(32.dp)) {
+                drawCircle(
+                    color = Color(0xFFD0D0D0),
+                    radius = size.minDimension / 2f - 1.dp.toPx(),
+                    style = Stroke(width = 1.5.dp.toPx()),
+                )
+            }
+            Icon(Icons.Filled.Add, contentDescription = "Add to list", tint = Color(0xFF080816), modifier = Modifier.size(18.dp))
         }
     }
 }
@@ -150,11 +315,11 @@ private fun ListSaleBanner() {
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
                     modifier = Modifier.size(44.dp).background(Color(0xFFFFE1E4), RoundedCornerShape(14.dp)),
-                    contentAlignment = androidx.compose.ui.Alignment.Center,
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(Icons.Filled.LocalOffer, contentDescription = null, tint = Color(0xFFD71920), modifier = Modifier.size(23.dp))
                 }
@@ -171,9 +336,9 @@ private fun ListSaleBanner() {
 @Composable
 private fun ListHeaderStrip(state: ListUiState) {
     val itemCount = state.categories.sumOf { it.items.size }
-    val activeCategory = state.categories.firstOrNull()?.name ?: "Produce"
     Column(
-        modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 20.dp).padding(top = 2.dp, bottom = 12.dp),
+        modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 20.dp)
+            .padding(top = 2.dp, bottom = 12.dp),
     ) {
         Text(
             "My List ($itemCount)",
@@ -182,56 +347,61 @@ private fun ListHeaderStrip(state: ListUiState) {
             fontWeight = FontWeight.SemiBold,
             lineHeight = 24.sp,
         )
-        Text(
-            activeCategory.uppercase(),
-            color = MarketBasketColors.Primary,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 2.sp,
-            modifier = Modifier.padding(top = 12.dp),
-        )
     }
 }
 
 @Composable
 private fun SearchAddRow(
-    draft: String,
-    onDraftChange: (String) -> Unit,
+    query: String,
+    onQueryChange: (String) -> Unit,
     onSubmit: () -> Unit,
     onSearchClose: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().background(Color.White)
-            .shadow(18.dp, ambientColor = Color(0x14080816), spotColor = Color(0x14080816))
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().background(Color(0xFFE8E8E8)),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         TextField(
-            value = draft,
-            onValueChange = onDraftChange,
+            value = query,
+            onValueChange = onQueryChange,
             modifier = Modifier.weight(1f).height(56.dp),
             singleLine = true,
-            placeholder = { Text("Search items...", color = Color(0x66080816), fontSize = 17.sp) },
+            placeholder = { Text("Search items...", color = Color(0x88080816), fontSize = 16.sp) },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onSubmit() }),
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0x1A080816),
-                unfocusedContainerColor = Color(0x1A080816),
-                disabledContainerColor = Color(0x1A080816),
+                focusedContainerColor = Color(0xFFE8E8E8),
+                unfocusedContainerColor = Color(0xFFE8E8E8),
+                disabledContainerColor = Color(0xFFE8E8E8),
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             ),
-            shape = RoundedCornerShape(24.dp),
+            shape = RectangleShape,
+            trailingIcon = if (query.isNotBlank()) {
+                {
+                    Text(
+                        "Add to list",
+                        color = Color(0xFF2E7D32),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(end = 12.dp).clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onSubmit,
+                        ),
+                    )
+                }
+            } else null,
         )
-        Surface(
-            onClick = onSearchClose,
-            shape = CircleShape,
-            color = Color(0x1A080816),
-            modifier = Modifier.size(56.dp),
+        Box(
+            modifier = Modifier.size(56.dp).background(Color(0xFFE8E8E8)).clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onSearchClose,
+            ),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                Icon(Icons.Filled.Close, contentDescription = "Close search", tint = Color(0xFF080816), modifier = Modifier.size(24.dp))
-            }
+            Icon(Icons.Filled.Close, contentDescription = "Close search", tint = Color(0xFF080816), modifier = Modifier.size(22.dp))
         }
     }
 }
@@ -240,7 +410,7 @@ private fun SearchAddRow(
 private fun EmptyListState() {
     Column(
         modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp).padding(top = 106.dp, bottom = 142.dp),
-        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
             painter = painterResource(R.drawable.empty_list),
@@ -267,30 +437,9 @@ private fun EmptyListState() {
         )
         Spacer(Modifier.height(20.dp))
         Canvas(Modifier.width(64.dp).height(132.dp)) {
-            drawLine(
-                color = Color(0xFFCFCFCF),
-                start = Offset(size.width * 0.38f, 0f),
-                end = Offset(size.width * 0.72f, size.height * 0.34f),
-                strokeWidth = 2f,
-                cap = StrokeCap.Round,
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 8f)),
-            )
-            drawLine(
-                color = Color(0xFFCFCFCF),
-                start = Offset(size.width * 0.72f, size.height * 0.34f),
-                end = Offset(size.width * 0.32f, size.height * 0.68f),
-                strokeWidth = 2f,
-                cap = StrokeCap.Round,
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 8f)),
-            )
-            drawLine(
-                color = Color(0xFFCFCFCF),
-                start = Offset(size.width * 0.32f, size.height * 0.68f),
-                end = Offset(size.width * 0.72f, size.height),
-                strokeWidth = 2f,
-                cap = StrokeCap.Round,
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 8f)),
-            )
+            drawLine(color = Color(0xFFCFCFCF), start = Offset(size.width * 0.38f, 0f), end = Offset(size.width * 0.72f, size.height * 0.34f), strokeWidth = 2f, cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 8f)))
+            drawLine(color = Color(0xFFCFCFCF), start = Offset(size.width * 0.72f, size.height * 0.34f), end = Offset(size.width * 0.32f, size.height * 0.68f), strokeWidth = 2f, cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 8f)))
+            drawLine(color = Color(0xFFCFCFCF), start = Offset(size.width * 0.32f, size.height * 0.68f), end = Offset(size.width * 0.72f, size.height), strokeWidth = 2f, cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 8f)))
         }
     }
 }

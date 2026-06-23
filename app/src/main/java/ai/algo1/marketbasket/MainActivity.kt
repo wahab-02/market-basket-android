@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        appViewModel.bootstrap(inboundPublicId(intent))
+        appViewModel.bootstrap(inboundLink(intent))
         setContent {
             MarketBasketTheme {
                 val state by appViewModel.connectionState.collectAsStateWithLifecycle()
@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         // Return link: https://market-basket-list-app.vercel.app?u=<publicId>&linked=whatsapp
-        appViewModel.onInbound(inboundPublicId(intent))
+        appViewModel.onInbound(inboundLink(intent))
     }
 
     override fun onResume() {
@@ -55,7 +55,13 @@ class MainActivity : ComponentActivity() {
         appViewModel.recheckConnection()
     }
 
-    private fun inboundPublicId(intent: Intent?): String? = intent?.data?.getQueryParameter("u")
+    private fun inboundLink(intent: Intent?): InboundLink {
+        val data = intent?.data
+        return InboundLink(
+            publicId = data?.getQueryParameter("u"),
+            marketBasketImport = data?.getQueryParameter("mb_import"),
+        )
+    }
 
     private fun openWhatsApp() {
         // Plain connect message — the webhook mints the publicId and returns it via the App Link.

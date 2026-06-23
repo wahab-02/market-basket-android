@@ -69,6 +69,10 @@ class SupabaseListDataSource @Inject constructor(
         supabase.from(TABLE).update({ set("checked", checked) }) { filter { eq("id", id) } }
     }
 
+    override suspend fun setImageUrl(id: String, imageUrl: String) {
+        supabase.from(TABLE).update({ set("image_url", imageUrl) }) { filter { eq("id", id) } }
+    }
+
     override suspend fun deleteItem(id: String) {
         supabase.from(TABLE).delete { filter { eq("id", id) } }
     }

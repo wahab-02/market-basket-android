@@ -3,7 +3,9 @@ package ai.algo1.marketbasket.feature.list
 import ai.algo1.marketbasket.core.data.dto.AppUserDto
 import ai.algo1.marketbasket.core.data.remote.ListChange
 import ai.algo1.marketbasket.core.data.remote.RemoteListDataSource
+import ai.algo1.marketbasket.core.data.repository.CatalogRepository
 import ai.algo1.marketbasket.core.data.repository.ListRepository
+import ai.algo1.marketbasket.core.domain.model.CatalogProduct
 import ai.algo1.marketbasket.core.domain.model.GroceryItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.Dispatchers
@@ -27,8 +29,14 @@ class ListViewModelTest {
         override suspend fun insertItem(userId: String, item: GroceryItem) { inserts += item }
         override suspend fun updateItem(id: String, item: GroceryItem) {}
         override suspend fun setChecked(id: String, checked: Boolean) {}
+        override suspend fun setImageUrl(id: String, imageUrl: String) {}
         override suspend fun deleteItem(id: String) {}
         override fun changes(userId: String): Flow<ListChange> = emptyFlow()
+    }
+
+    private class FakeCatalogRepository : CatalogRepository {
+        override suspend fun searchProducts(term: String) = emptyList<CatalogProduct>()
+        override suspend fun searchCategoryImage(term: String) = null
     }
 
     private suspend fun loadedRepo(remote: RemoteListDataSource): ListRepository =
@@ -44,7 +52,7 @@ class ListViewModelTest {
 
     @Test fun addByName_resolvesCategory_andInserts() = runTest(UnconfinedTestDispatcher()) {
         val remote = FakeRemote()
-        val vm = ListViewModel(loadedRepo(remote))
+        val vm = ListViewModel(loadedRepo(remote), FakeCatalogRepository())
         backgroundScope.launch { vm.uiState.collect {} }   // activate WhileSubscribed before reading .value
         vm.addByName("Fresh Whole Milk")   // CategoryResolver keyword -> "dairy"
         assertEquals(1, remote.inserts.size)
@@ -55,7 +63,7 @@ class ListViewModelTest {
 
     @Test fun blankName_doesNothing() = runTest(UnconfinedTestDispatcher()) {
         val remote = FakeRemote()
-        val vm = ListViewModel(loadedRepo(remote))
+        val vm = ListViewModel(loadedRepo(remote), FakeCatalogRepository())
         vm.addByName("   ")
         assertEquals(0, remote.inserts.size)
     }

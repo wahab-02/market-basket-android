@@ -3,7 +3,11 @@ package ai.algo1.marketbasket
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ai.algo1.marketbasket.core.data.local.LocalStore
+import ai.algo1.marketbasket.core.data.remote.ApiService
+import ai.algo1.marketbasket.core.data.remote.ImportItem
+import ai.algo1.marketbasket.core.data.remote.ImportRequest
 import ai.algo1.marketbasket.core.data.repository.ListRepository
+import ai.algo1.marketbasket.core.domain.catalog.CategoryResolver
 import ai.algo1.marketbasket.core.domain.connection.Connection
 import ai.algo1.marketbasket.core.domain.connection.ConnectionState
 import ai.algo1.marketbasket.core.domain.identity.Identity
@@ -13,12 +17,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import org.json.JSONObject
+import java.util.Base64
 import javax.inject.Inject
+
+data class InboundLink(
+    val publicId: String?,
+    val marketBasketImport: String?,
+)
 
 @HiltViewModel
 class AppViewModel @Inject constructor(
     private val localStore: LocalStore,
     private val listRepository: ListRepository,
+    private val apiService: ApiService,
 ) : ViewModel() {
 
     private val _connectionState = MutableStateFlow(ConnectionState.Loading)
@@ -33,13 +45,13 @@ class AppViewModel @Inject constructor(
     private var resolvedPublicId: String? = null
 
     /** Called once from the Activity with the inbound `?u=` value (if any) from an App Link. */
-    fun bootstrap(inbound: String?) {
+    fun bootstrap(inbound: InboundLink) {
         if (started) return
         started = true
         viewModelScope.launch {
             val stored = localStore.publicId.first()
-            when (val r = Identity.resolve(stored, inbound)) {
-                is Identity.Resolution.Use -> adopt(r.publicId, stored)
+            when (val r = Identity.resolve(stored, inbound.publicId)) {
+                is Identity.Resolution.Use -> adopt(r.publicId, stored, inbound.marketBasketImport)
                 Identity.Resolution.None -> {
                     // Brand-new device: no id yet. The webhook mints it on WhatsApp connect and
                     // returns it via the App Link (handled in onInbound). Until then, unconnected.
@@ -54,18 +66,22 @@ class AppViewModel @Inject constructor(
      * Called from Activity.onNewIntent when a `?u=` App Link arrives while the app is running —
      * e.g. the WhatsApp connect-return link `…/?u=<publicId>&linked=whatsapp`.
      */
-    fun onInbound(inbound: String?) {
-        val id = inbound?.trim()?.ifBlank { null } ?: return
+    fun onInbound(inbound: InboundLink) {
+        val id = inbound.publicId?.trim()?.ifBlank { null } ?: return
         viewModelScope.launch {
             val stored = localStore.publicId.first()
             if (id != resolvedPublicId) realtimeStarted = false   // switching lists → allow realtime to (re)start
-            adopt(id, stored)
+            adopt(id, stored, inbound.marketBasketImport)
         }
     }
 
-    private suspend fun adopt(publicId: String, stored: String?) {
+    private suspend fun adopt(publicId: String, stored: String?, marketBasketImport: String? = null) {
         if (publicId != stored) localStore.setPublicId(publicId)
         resolvedPublicId = publicId
+        if (!marketBasketImport.isNullOrBlank() && importMarketBasket(publicId, marketBasketImport)) {
+            localStore.setConnected(true)
+            realtimeStarted = false
+        }
         evaluate(publicId)
     }
 
@@ -97,6 +113,44 @@ class AppViewModel @Inject constructor(
             _connectionState.value = if (connected) ConnectionState.Connected else ConnectionState.Unconnected
         } finally {
             evaluating = false
+        }
+    }
+
+    private suspend fun importMarketBasket(publicId: String, encodedPayload: String): Boolean {
+        val items = decodeMarketBasketImport(encodedPayload)
+        if (items.isEmpty()) return false
+
+        return try {
+            apiService.importMarketBasket(ImportRequest(publicId = publicId, items = items))
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun decodeMarketBasketImport(encodedPayload: String): List<ImportItem> {
+        val padded = encodedPayload.padEnd(encodedPayload.length + ((4 - encodedPayload.length % 4) % 4), '=')
+        val json = String(Base64.getUrlDecoder().decode(padded), Charsets.UTF_8)
+        val payload = JSONObject(json)
+        val items = payload.optJSONArray("items") ?: return emptyList()
+
+        return buildList {
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                val name = item.optString("name").trim()
+                if (name.isEmpty()) continue
+
+                val quantity = when {
+                    item.has("qty") -> item.optInt("qty", 1)
+                    else -> item.optInt("quantity", 1)
+                }.coerceIn(1, 99)
+                val category = CategoryResolver.resolveCategoryFromText(
+                    rawCategory = item.optString("category").takeIf { it.isNotBlank() },
+                    productName = name,
+                )
+
+                add(ImportItem(name = name, quantity = quantity, category = category))
+            }
         }
     }
 }

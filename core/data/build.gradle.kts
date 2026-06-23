@@ -26,6 +26,11 @@ android {
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${cfg("SUPABASE_ANON_KEY")}\"")
         buildConfigField("String", "BACKEND_BASE_URL", "\"${cfg("BACKEND_BASE_URL")}\"")
         buildConfigField("String", "WHATSAPP_NUMBER", "\"${cfg("WHATSAPP_NUMBER")}\"")
+        buildConfigField("String", "CATALOG_BASE_URL", "\"${cfg("CATALOG_BASE_URL")}\"")
+        buildConfigField("String", "CATALOG_API_KEY", "\"${cfg("CATALOG_API_KEY")}\"")
+        buildConfigField("String", "CATALOG_STORE_URN", "\"${cfg("CATALOG_STORE_URN")}\"")
+        buildConfigField("String", "CATALOG_DEVICE_ID", "\"${cfg("CATALOG_DEVICE_ID")}\"")
+        buildConfigField("String", "CATALOG_PARTNER_URN", "\"${cfg("CATALOG_PARTNER_URN")}\"")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

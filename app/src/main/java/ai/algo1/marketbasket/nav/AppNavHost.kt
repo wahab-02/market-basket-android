@@ -1,5 +1,7 @@
 package ai.algo1.marketbasket.nav
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -53,6 +55,10 @@ fun AppNavHost() {
                 navController = navController,
                 startDestination = Destination.START.route,
                 modifier = Modifier.fillMaxSize().padding(padding),
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { ExitTransition.None },
             ) {
                 Destination.entries.forEach { dest ->
                     composable(dest.route) {

@@ -75,6 +75,37 @@ class ListRepository @Inject constructor(private val remote: RemoteListDataSourc
         remote.deleteItem(itemId)
     }
 
+    suspend fun setImageUrl(itemId: String, imageUrl: String) {
+        _categories.value = _categories.value.map { cat ->
+            cat.copy(items = cat.items.map { item ->
+                if (item.id == itemId) item.copy(imageUrl = imageUrl) else item
+            })
+        }
+        remote.setImageUrl(itemId, imageUrl)
+    }
+
+    suspend fun increment(itemId: String) {
+        var updated: ai.algo1.marketbasket.core.domain.model.GroceryItem? = null
+        _categories.value = _categories.value.map { cat ->
+            cat.copy(items = cat.items.map { item ->
+                if (item.id == itemId) item.copy(quantity = (item.quantity ?: 1) + 1).also { updated = it }
+                else item
+            })
+        }
+        updated?.let { remote.updateItem(itemId, it) }
+    }
+
+    suspend fun decrement(itemId: String) {
+        var updated: ai.algo1.marketbasket.core.domain.model.GroceryItem? = null
+        _categories.value = _categories.value.map { cat ->
+            cat.copy(items = cat.items.map { item ->
+                if (item.id == itemId) item.copy(quantity = maxOf(1, (item.quantity ?: 1) - 1)).also { updated = it }
+                else item
+            })
+        }
+        updated?.let { remote.updateItem(itemId, it) }
+    }
+
     fun observeRealtime(scope: CoroutineScope) {
         val uid = userId ?: return
         remote.changes(uid).onEach { change ->

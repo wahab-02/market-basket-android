@@ -15,6 +15,7 @@ interface RemoteListDataSource {
     suspend fun insertItem(userId: String, item: GroceryItem)
     suspend fun updateItem(id: String, item: GroceryItem)
     suspend fun setChecked(id: String, checked: Boolean)
+    suspend fun setImageUrl(id: String, imageUrl: String)
     suspend fun deleteItem(id: String)
     fun changes(userId: String): Flow<ListChange>
 }

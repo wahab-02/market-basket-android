@@ -44,3 +44,10 @@ data class Promotion(
     val isActive: Boolean,
     val createdAt: String,
 )
+
+data class CatalogProduct(
+    val urn: String,
+    val name: String,
+    val imageUrl: String?,
+    val category: String,
+)

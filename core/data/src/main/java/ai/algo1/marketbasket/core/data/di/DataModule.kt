@@ -3,6 +3,8 @@ package ai.algo1.marketbasket.core.data.di
 import ai.algo1.marketbasket.core.data.BuildConfig
 import ai.algo1.marketbasket.core.data.remote.RemoteListDataSource
 import ai.algo1.marketbasket.core.data.remote.SupabaseListDataSource
+import ai.algo1.marketbasket.core.data.repository.CatalogRepository
+import ai.algo1.marketbasket.core.data.repository.CatalogRepositoryImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -55,4 +57,8 @@ object DataModule {
     @Provides
     @Singleton
     fun provideRemoteListDataSource(impl: SupabaseListDataSource): RemoteListDataSource = impl
+
+    @Provides
+    @Singleton
+    fun provideCatalogRepository(impl: CatalogRepositoryImpl): CatalogRepository = impl
 }
