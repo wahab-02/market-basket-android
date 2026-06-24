@@ -98,4 +98,41 @@ class ChatViewModelTest {
         assertTrue(vm.messages.value.any { it.role == Role.Assistant && it.text.contains("Something went wrong") })
         assertFalse(vm.isLoading.value)
     }
+
+    @Test fun `hydrateMessages maps user and assistant rows, skips unknown roles`() = runTest {
+        val rows = listOf(
+            MessageRow(role = "user", content = "what's for dinner?"),
+            MessageRow(role = "assistant", content = "How about pasta?"),
+            MessageRow(role = "unknown", content = "ignored"),
+        )
+        val repo = object : AgentChatRepository {
+            override fun streamChat(t: String, p: String, m: String): Flow<AgentEvent> = flowOf()
+            override suspend fun fetchThreadMessages(t: String, p: String): List<MessageRow> = rows
+        }
+        val vm = viewModel(repo)
+        testDispatcher.scheduler.advanceUntilIdle()
+        val msgs = vm.messages.value
+        assertEquals(2, msgs.size)
+        assertEquals(Role.User, msgs[0].role)
+        assertEquals("what's for dinner?", msgs[0].text)
+        assertEquals(Role.Assistant, msgs[1].role)
+        assertEquals("How about pasta?", msgs[1].text)
+    }
+
+    @Test fun `handleAddIngredients sends formatted follow-up and marks recipe added`() = runTest {
+        var sentMessage: String? = null
+        val repo = object : AgentChatRepository {
+            override fun streamChat(t: String, p: String, m: String): Flow<AgentEvent> {
+                sentMessage = m
+                return flowOf(AgentEvent.Final(responseText = "Done", suggestions = null))
+            }
+            override suspend fun fetchThreadMessages(t: String, p: String) = emptyList<MessageRow>()
+        }
+        val vm = viewModel(repo)
+        testDispatcher.scheduler.advanceUntilIdle()
+        vm.handleAddIngredients("msg-1", listOf("2 eggs", "1 cup milk"))
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals("Add these ingredients to my list: 2 eggs, 1 cup milk", sentMessage)
+        assertTrue(vm.addedRecipeIds.value.contains("msg-1"))
+    }
 }

@@ -1,6 +1,7 @@
 package ai.algo1.marketbasket.feature.chat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -139,6 +140,7 @@ private fun SuggestionChips(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
+                    .border(1.dp, ChipBorder, RoundedCornerShape(999.dp))
                     .background(ChipBg)
                     .clickable { onSuggestion(s) }
                     .padding(horizontal = 12.dp, vertical = 6.dp),

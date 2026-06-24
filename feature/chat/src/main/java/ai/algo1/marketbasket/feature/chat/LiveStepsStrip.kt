@@ -35,12 +35,12 @@ import androidx.compose.ui.unit.sp
 fun LiveStepsStrip(steps: List<LiveStep>, modifier: Modifier = Modifier) {
     if (steps.isEmpty()) return
     Column(modifier = modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        steps.forEachIndexed { i, step -> StepPill(step = step, key = "$i-${step.tool}") }
+        steps.forEach { step -> StepPill(step) }
     }
 }
 
 @Composable
-private fun StepPill(step: LiveStep, key: String) {
+private fun StepPill(step: LiveStep) {
     when (step.status) {
         StepStatus.Pending -> PendingPill(step.label)
         StepStatus.Running -> RunningPill(step.inputSummary ?: step.label)

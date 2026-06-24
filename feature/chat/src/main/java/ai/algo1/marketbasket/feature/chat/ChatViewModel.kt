@@ -64,6 +64,7 @@ class ChatViewModel @Inject constructor(
     }
 
     private suspend fun hydrateMessages() {
+        if (_isLoading.value) return
         val pid = cachedPublicId ?: return
         val tid = cachedThreadId ?: return
         val rows = agentChatRepository.fetchThreadMessages(tid, pid)
@@ -212,6 +213,7 @@ class ChatViewModel @Inject constructor(
                                 suggestions = event.suggestions ?: emptyList(),
                             )
                             _messages.value = _messages.value + assistantMsg
+                            _isLoading.value = false
                         }
                         is AgentEvent.Error -> {
                             val errMsg = ChatMessage(
@@ -224,6 +226,7 @@ class ChatViewModel @Inject constructor(
                                 suggestions = emptyList(),
                             )
                             _messages.value = _messages.value + errMsg
+                            _isLoading.value = false
                         }
                         else -> { /* Start, Unknown — ignore */ }
                     }
@@ -256,6 +259,7 @@ class ChatViewModel @Inject constructor(
     }
 
     fun handleAddIngredients(messageId: String, ingredients: List<String>) {
+        if (_isLoading.value) return
         _addedRecipeIds.value = _addedRecipeIds.value + messageId
         sendMessage("Add these ingredients to my list: ${ingredients.joinToString(", ")}")
     }

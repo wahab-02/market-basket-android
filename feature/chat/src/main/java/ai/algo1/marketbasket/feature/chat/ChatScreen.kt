@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,9 +64,10 @@ fun ChatScreen(
     // Slide-in from right animation
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
-    val screenWidth = LocalConfiguration.current.screenWidthDp.toFloat()
+    val density = LocalDensity.current
+    val screenWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
     val translationX by animateFloatAsState(
-        targetValue = if (visible) 0f else screenWidth,
+        targetValue = if (visible) 0f else screenWidthPx,
         animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
         label = "chat_slide_in",
     )
