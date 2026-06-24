@@ -1,15 +1,23 @@
 package ai.algo1.marketbasket.core.data.di
 
 import ai.algo1.marketbasket.core.data.BuildConfig
+import ai.algo1.marketbasket.core.data.local.ChatThreadRepository
+import ai.algo1.marketbasket.core.data.local.ChatThreadStore
 import ai.algo1.marketbasket.core.data.remote.AgentChatRepository
 import ai.algo1.marketbasket.core.data.remote.AgentChatService
 import ai.algo1.marketbasket.core.data.remote.RemoteListDataSource
 import ai.algo1.marketbasket.core.data.remote.SupabaseListDataSource
 import ai.algo1.marketbasket.core.data.repository.CatalogRepository
 import ai.algo1.marketbasket.core.data.repository.CatalogRepositoryImpl
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
@@ -26,6 +34,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DataModule {
+
+    @Provides
+    @Singleton
+    fun provideDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("market_basket") }
 
     @Provides
     @Singleton
@@ -81,4 +94,8 @@ object DataModule {
     @Provides
     @Singleton
     fun provideCatalogRepository(impl: CatalogRepositoryImpl): CatalogRepository = impl
+
+    @Provides
+    @Singleton
+    fun provideChatThreadRepository(impl: ChatThreadStore): ChatThreadRepository = impl
 }
