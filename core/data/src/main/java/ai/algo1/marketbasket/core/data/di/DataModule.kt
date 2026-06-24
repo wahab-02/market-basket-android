@@ -1,6 +1,8 @@
 package ai.algo1.marketbasket.core.data.di
 
 import ai.algo1.marketbasket.core.data.BuildConfig
+import ai.algo1.marketbasket.core.data.remote.AgentChatRepository
+import ai.algo1.marketbasket.core.data.remote.AgentChatService
 import ai.algo1.marketbasket.core.data.remote.RemoteListDataSource
 import ai.algo1.marketbasket.core.data.remote.SupabaseListDataSource
 import ai.algo1.marketbasket.core.data.repository.CatalogRepository
@@ -53,6 +55,24 @@ object DataModule {
             }
         }
     }
+
+    @Provides
+    @Singleton
+    @StreamingHttpClient
+    fun provideStreamingHttpClient(json: Json): HttpClient = HttpClient(OkHttp) {
+        install(ContentNegotiation) { json(json) }
+        engine {
+            config {
+                connectTimeout(30, TimeUnit.SECONDS)
+                readTimeout(0, TimeUnit.SECONDS)   // 0 = no read timeout — required for SSE
+                writeTimeout(30, TimeUnit.SECONDS)
+            }
+        }
+    }
+
+    @Provides
+    @Singleton
+    fun provideAgentChatRepository(impl: AgentChatService): AgentChatRepository = impl
 
     @Provides
     @Singleton
