@@ -29,7 +29,7 @@ class AgentChatService @Inject constructor(
     private val json: Json,
 ) : AgentChatRepository {
 
-    private val base = BuildConfig.BACKEND_BASE_URL.trimEnd('/')
+    private val base = BuildConfig.AGENT_BACKEND_BASE_URL.trimEnd('/')
 
     override fun streamChat(
         threadId: String,
