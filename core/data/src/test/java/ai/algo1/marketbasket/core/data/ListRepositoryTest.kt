@@ -29,6 +29,7 @@ class ListRepositoryTest {
         override suspend fun insertItem(userId: String, item: GroceryItem) { inserted++ }
         override suspend fun updateItem(id: String, item: GroceryItem) { updated++ }
         override suspend fun setChecked(id: String, checked: Boolean) { checkedCalls++ }
+        override suspend fun setImageUrl(id: String, imageUrl: String) {}
         override suspend fun deleteItem(id: String) { deleted++ }
         override fun changes(userId: String): Flow<ListChange> = realtime.receiveAsFlow()
     }
