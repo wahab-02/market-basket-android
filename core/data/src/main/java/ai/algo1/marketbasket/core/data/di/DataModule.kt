@@ -9,6 +9,8 @@ import ai.algo1.marketbasket.core.data.remote.RemoteListDataSource
 import ai.algo1.marketbasket.core.data.remote.SupabaseListDataSource
 import ai.algo1.marketbasket.core.data.repository.CatalogRepository
 import ai.algo1.marketbasket.core.data.repository.CatalogRepositoryImpl
+import ai.algo1.marketbasket.core.data.repository.ListRepository
+import ai.algo1.marketbasket.core.data.repository.PublicIdProvider
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
@@ -98,4 +100,8 @@ object DataModule {
     @Provides
     @Singleton
     fun provideChatThreadRepository(impl: ChatThreadStore): ChatThreadRepository = impl
+
+    @Provides
+    @Singleton
+    fun providePublicIdProvider(impl: ListRepository): PublicIdProvider = impl
 }
