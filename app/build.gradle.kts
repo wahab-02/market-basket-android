@@ -57,6 +57,7 @@ dependencies {
     implementation(project(":feature:deals"))
     implementation(project(":feature:today"))
     implementation(project(":feature:onboarding"))
+    implementation(project(":feature:chat"))
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

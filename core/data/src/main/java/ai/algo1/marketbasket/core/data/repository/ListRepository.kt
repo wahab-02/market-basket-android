@@ -17,12 +17,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class ListRepository @Inject constructor(private val remote: RemoteListDataSource) {
+class ListRepository @Inject constructor(private val remote: RemoteListDataSource) : PublicIdProvider {
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
     val categories: StateFlow<List<Category>> = _categories.asStateFlow()
 
     private val _publicId = MutableStateFlow<String?>(null)
-    val publicId: StateFlow<String?> = _publicId.asStateFlow()
+    override val publicId: StateFlow<String?> = _publicId.asStateFlow()
 
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
