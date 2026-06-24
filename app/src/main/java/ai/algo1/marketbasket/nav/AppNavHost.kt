@@ -11,9 +11,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.activity.compose.BackHandler
+import ai.algo1.marketbasket.feature.chat.ChatScreen
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -35,6 +38,9 @@ fun AppNavHost() {
         listSearchOpen.value = true
         navController.navigateTab(Destination.List)
     }
+
+    var chatOpen by remember { mutableStateOf(false) }
+    BackHandler(enabled = chatOpen) { chatOpen = false }
 
     LaunchedEffect(selectedDestination) {
         if (selectedDestination != Destination.List) {
@@ -98,8 +104,13 @@ fun AppNavHost() {
             modifier = Modifier.align(Alignment.BottomCenter),
         )
         FloatingChatLauncher(
+            onClick = { chatOpen = true },
             modifier = Modifier.align(Alignment.BottomEnd).padding(end = 28.dp, bottom = 104.dp),
         )
+
+        if (chatOpen) {
+            ChatScreen(onClose = { chatOpen = false })
+        }
 
         // HomeIntroOverlay is intentionally disabled for now; keep the component for later.
     }
