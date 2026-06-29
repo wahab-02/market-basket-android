@@ -86,7 +86,7 @@ fun AppNavHost() {
                             )
                             Destination.Deals -> ai.algo1.marketbasket.feature.deals.DealsRoute()
                             Destination.You -> ai.algo1.marketbasket.feature.onboarding.ConnectionRoute()
-                            else -> PlaceholderScreen(dest.label)
+                            Destination.Ideas -> ai.algo1.marketbasket.feature.ideas.IdeasRoute()
                         }
                     }
                 }
@@ -102,11 +102,14 @@ fun AppNavHost() {
                 navController.navigateTab(dest)
             },
             modifier = Modifier.align(Alignment.BottomCenter),
+            inverted = selectedDestination == Destination.Ideas,
         )
-        FloatingChatLauncher(
-            onClick = { chatOpen = true },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 28.dp, bottom = 104.dp),
-        )
+        if (selectedDestination != Destination.Ideas) {
+            FloatingChatLauncher(
+                onClick = { chatOpen = true },
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 28.dp, bottom = 104.dp),
+            )
+        }
 
         if (chatOpen) {
             ChatScreen(onClose = { chatOpen = false })
