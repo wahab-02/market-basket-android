@@ -254,7 +254,15 @@ internal fun FloatingBottomNav(
     selected: Destination,
     onDestinationClick: (Destination) -> Unit,
     modifier: Modifier = Modifier,
+    inverted: Boolean = false,
 ) {
+    val pillBg = if (inverted) Color(0xFF1A1A1A).copy(alpha = 0.9f) else Color.White.copy(alpha = 0.86f)
+    val pillBorder = if (inverted) Color.White.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.72f)
+    val innerBg1 = if (inverted) Color(0xFF1A1A1A).copy(alpha = 0.92f) else Color.White.copy(alpha = 0.88f)
+    val innerBg2 = if (inverted) Color(0xFF1A1A1A).copy(alpha = 0.80f) else Color.White.copy(alpha = 0.62f)
+    val innerBg3 = if (inverted) Color(0xFF1A1A1A).copy(alpha = 0.88f) else Color.White.copy(alpha = 0.80f)
+    val selectedPillBg = if (inverted) Color.White else Color.White
+
     val selectedPrimaryIndex = primaryBottomNavDestinations.indexOf(selected)
     Row(
         modifier = modifier
@@ -266,9 +274,9 @@ internal fun FloatingBottomNav(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Surface(
-            color = Color.White.copy(alpha = 0.86f),
+            color = pillBg,
             shape = RoundedCornerShape(35.dp),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.72f)),
+            border = BorderStroke(1.dp, pillBorder),
             modifier = Modifier.weight(1f).fillMaxHeight().shadow(40.dp, RoundedCornerShape(35.dp), ambientColor = Color(0x33080816), spotColor = Color(0x33080816)),
         ) {
             BoxWithConstraints(Modifier.fillMaxSize().padding(4.dp)) {
@@ -286,13 +294,7 @@ internal fun FloatingBottomNav(
                 Box(
                     modifier = Modifier.fillMaxSize()
                         .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.White.copy(alpha = 0.88f),
-                                    Color.White.copy(alpha = 0.62f),
-                                    Color.White.copy(alpha = 0.8f),
-                                ),
-                            ),
+                            Brush.verticalGradient(colors = listOf(innerBg1, innerBg2, innerBg3)),
                             RoundedCornerShape(31.dp),
                         ),
                 )
@@ -302,7 +304,7 @@ internal fun FloatingBottomNav(
                         .fillMaxHeight()
                         .alpha(pillAlpha.value)
                         .shadow(30.dp, RoundedCornerShape(31.dp), ambientColor = Color(0x3D080816), spotColor = Color(0x3D080816))
-                        .background(Color.White, RoundedCornerShape(31.dp)),
+                        .background(selectedPillBg, RoundedCornerShape(31.dp)),
                 )
                 Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                     primaryBottomNavDestinations.forEach { destination ->
@@ -311,6 +313,7 @@ internal fun FloatingBottomNav(
                             selected = selected == destination,
                             onClick = { onDestinationClick(destination) },
                             modifier = Modifier.weight(1f),
+                            inverted = inverted,
                         )
                     }
                 }
@@ -320,6 +323,7 @@ internal fun FloatingBottomNav(
         FloatingProfileNavItem(
             selected = selected == profileBottomNavDestination,
             onClick = { onDestinationClick(profileBottomNavDestination) },
+            inverted = inverted,
         )
     }
 }
@@ -330,9 +334,15 @@ private fun FloatingNavItem(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    inverted: Boolean = false,
 ) {
     val foreground = animateColorAsState(
-        targetValue = if (selected) BrandRed else BrandInk.copy(alpha = 0.72f),
+        targetValue = when {
+            selected && inverted -> BrandInk
+            selected -> BrandRed
+            inverted -> Color.White.copy(alpha = 0.72f)
+            else -> BrandInk.copy(alpha = 0.72f)
+        },
         animationSpec = tween(300),
         label = "bottom_nav_item_color",
     )
@@ -378,15 +388,20 @@ private fun FloatingNavItem(
 }
 
 @Composable
-private fun FloatingProfileNavItem(selected: Boolean, onClick: () -> Unit) {
-    val foreground = if (selected) BrandRed else BrandInk.copy(alpha = 0.72f)
+private fun FloatingProfileNavItem(selected: Boolean, onClick: () -> Unit, inverted: Boolean = false) {
+    val foreground = when {
+        selected && inverted -> Color.White
+        selected -> BrandRed
+        inverted -> Color.White.copy(alpha = 0.72f)
+        else -> BrandInk.copy(alpha = 0.72f)
+    }
     val interactionSource = remember { MutableInteractionSource() }
     val pressed = interactionSource.collectIsPressedAsState().value
     val pressScale = animateFloatAsState(if (pressed) 0.97f else 1f, label = "profile_nav_press_scale")
     Surface(
         shape = CircleShape,
-        color = Color.White.copy(alpha = 0.92f),
-        border = BorderStroke(1.dp, if (selected) Color.White else Color(0xFFE1E1E1)),
+        color = if (inverted) Color(0xFF1A1A1A).copy(alpha = 0.9f) else Color.White.copy(alpha = 0.92f),
+        border = BorderStroke(1.dp, if (inverted) Color.White.copy(alpha = 0.18f) else if (selected) Color.White else Color(0xFFE1E1E1)),
         modifier = Modifier.size(64.dp)
             .graphicsLayer {
                 scaleX = pressScale.value
