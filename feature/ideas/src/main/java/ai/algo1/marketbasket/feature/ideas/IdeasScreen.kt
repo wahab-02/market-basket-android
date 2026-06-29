@@ -552,7 +552,7 @@ private fun HeartIcon(active: Boolean) {
         // 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z
         val path = Path().apply {
             moveTo(12f * sx, 21.35f * sy)
-            rLineTo(-1.45f * sx, -1.32f * sy)
+            lineTo(10.55f * sx, 20.03f * sy)
             cubicTo(5.4f * sx, 15.36f * sy, 2f * sx, 12.28f * sy, 2f * sx, 8.5f * sy)
             cubicTo(2f * sx, 5.42f * sy, 4.42f * sx, 3f * sy, 7.5f * sx, 3f * sy)
             cubicTo(9.24f * sx, 3f * sy, 10.91f * sx, 3.81f * sy, 12f * sx, 5.09f * sy)
