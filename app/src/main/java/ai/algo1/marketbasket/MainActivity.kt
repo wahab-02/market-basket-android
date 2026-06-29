@@ -33,11 +33,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             MarketBasketTheme {
                 val state by appViewModel.connectionState.collectAsStateWithLifecycle()
-                when (state) {
-                    ConnectionState.Loading -> LoadingScreen()
-                    ConnectionState.Unconnected -> WelcomeScreen(onConnect = ::openWhatsApp)
-                    ConnectionState.Connected -> AppNavHost()
-                }
+                // TODO: re-enable onboarding gate before release
+                // when (state) {
+                //     ConnectionState.Loading -> LoadingScreen()
+                //     ConnectionState.Unconnected -> WelcomeScreen(onConnect = ::openWhatsApp)
+                //     ConnectionState.Connected -> AppNavHost()
+                // }
+                AppNavHost()
             }
         }
     }

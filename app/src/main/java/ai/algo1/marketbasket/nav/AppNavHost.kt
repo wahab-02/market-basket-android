@@ -67,7 +67,9 @@ fun AppNavHost() {
             NavHost(
                 navController = navController,
                 startDestination = Destination.START.route,
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(if (selectedDestination != Destination.Ideas) Modifier.padding(padding) else Modifier),
                 enterTransition = { EnterTransition.None },
                 exitTransition = { ExitTransition.None },
                 popEnterTransition = { EnterTransition.None },

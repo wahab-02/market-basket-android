@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
@@ -64,11 +65,13 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 
 private val VideoAccentColor = Color(0xFFC7353A)
 private val OverlayEasing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
 private const val CollapsedDescriptionLength = 85
+private const val TabBarScrimAlpha = 0.42f
 
 private val IdeasTabTitles = listOf("Videos", "Recipes", "Meal Planning")
 
@@ -129,6 +132,7 @@ fun IdeasScreen(
         state.selectedRecipeForList?.let { recipe ->
             AddIngredientsDialog(
                 recipe = recipe,
+                isAdding = state.isAddingToList,
                 onDismiss = onAddToListDismiss,
                 onConfirm = { onAddIngredientsConfirmed(recipe.id) },
             )
@@ -144,21 +148,29 @@ private fun IdeasTabBar(
     isVideoExpanded: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val bgAlpha by animateFloatAsState(
-        targetValue = if (isVideoExpanded) 0.52f else 0f,
+    val bgStartAlpha by animateFloatAsState(
+        targetValue = if (isVideoExpanded) 0.98f else TabBarScrimAlpha,
         animationSpec = tween(300, easing = OverlayEasing),
         label = "tab_bar_bg_alpha",
     )
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.Black.copy(alpha = bgAlpha)),
+            .background(
+                Brush.verticalGradient(
+                    colorStops = arrayOf(
+                        0f to Color.Black.copy(alpha = bgStartAlpha),
+                        0.78f to Color.Black.copy(alpha = bgStartAlpha),
+                        1f to Color.Transparent,
+                    ),
+                )
+            ),
     ) {
         Spacer(Modifier.statusBarsPadding())
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 4.dp),
+                .padding(top = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             tabs.forEachIndexed { index, title ->
@@ -171,7 +183,7 @@ private fun IdeasTabBar(
                             indication = null,
                             onClick = { onTabSelected(index) },
                         )
-                        .padding(bottom = 10.dp),
+                        .padding(bottom = 14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
@@ -179,7 +191,8 @@ private fun IdeasTabBar(
                         color = if (selected) Color.White else Color.White.copy(alpha = 0.5f),
                         fontSize = 16.sp,
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        modifier = Modifier.padding(vertical = 10.dp),
+                        maxLines = 1,
+                        modifier = Modifier.padding(vertical = 18.dp),
                     )
                     if (selected) {
                         Box(
@@ -258,6 +271,7 @@ private fun VideoPage(
             factory = { ctx ->
                 PlayerView(ctx).apply {
                     useController = false
+                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                     layoutParams = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -268,19 +282,6 @@ private fun VideoPage(
                 playerView.player = if (isCurrentPage) player else null
             },
             modifier = Modifier.fillMaxSize(),
-        )
-
-        // top scrim
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
-                .align(Alignment.TopCenter)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color.Black.copy(alpha = 0.5f), Color.Transparent),
-                    ),
-                ),
         )
 
         // bottom scrim
@@ -399,7 +400,6 @@ private fun RecipeInfoOverlay(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
                         .background(Color.White.copy(alpha = 0.1f))
                         .padding(horizontal = 12.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
@@ -413,8 +413,12 @@ private fun RecipeInfoOverlay(
                 Text("Ingredients", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(10.dp))
                 recipe.ingredients.forEach { ingredient ->
-                    Row(modifier = Modifier.padding(bottom = 8.dp)) {
-                        Text("•", color = VideoAccentColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Row(modifier = Modifier.padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(VideoAccentColor, CircleShape),
+                        )
                         Spacer(Modifier.width(8.dp))
                         Text(ingredient, color = Color.White, fontSize = 18.sp, lineHeight = 24.sp)
                     }
@@ -428,7 +432,7 @@ private fun RecipeInfoOverlay(
                         Box(
                             modifier = Modifier
                                 .size(28.dp)
-                                .background(VideoAccentColor, RoundedCornerShape(14.dp)),
+                                .background(VideoAccentColor),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
@@ -689,6 +693,7 @@ private fun ShareIcon() {
 @Composable
 private fun AddIngredientsDialog(
     recipe: Recipe,
+    isAdding: Boolean,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
@@ -756,7 +761,7 @@ private fun AddIngredientsDialog(
                             Box(
                                 modifier = Modifier
                                     .size(10.dp)
-                                    .background(VideoAccentColor, RoundedCornerShape(2.dp)),
+                                    .background(VideoAccentColor, CircleShape),
                             )
                             Spacer(Modifier.width(12.dp))
                             Text(
@@ -797,13 +802,13 @@ private fun AddIngredientsDialog(
                         )
                     }
                     Surface(
-                        onClick = onConfirm,
+                        onClick = { if (!isAdding) onConfirm() },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         color = VideoAccentColor,
                     ) {
                         Text(
-                            text = "Add ingredients",
+                            text = if (isAdding) "Adding..." else "Add ingredients",
                             color = Color.White,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
