@@ -99,16 +99,21 @@ fun IdeasScreen(
     onAddIngredientsConfirmed: (String) -> Unit,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
+    var isVideoExpanded by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         when (selectedTab) {
             0 -> VideosTab(
                 state = state,
                 player = player,
-                onPageSettled = onPageSettled,
+                onPageSettled = {
+                    isVideoExpanded = false
+                    onPageSettled(it)
+                },
                 onFavoriteToggle = onFavoriteToggle,
                 onBookmarkToggle = onBookmarkToggle,
                 onAddToListPress = onAddToListPress,
+                onExpandedChange = { isVideoExpanded = it },
             )
             else -> PlaceholderTab(IdeasTabTitles[selectedTab])
         }
@@ -117,6 +122,7 @@ fun IdeasScreen(
             tabs = IdeasTabTitles,
             selectedIndex = selectedTab,
             onTabSelected = { selectedTab = it },
+            isVideoExpanded = isVideoExpanded,
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
@@ -135,44 +141,56 @@ private fun IdeasTabBar(
     tabs: List<String>,
     selectedIndex: Int,
     onTabSelected: (Int) -> Unit,
+    isVideoExpanded: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    val bgAlpha by animateFloatAsState(
+        targetValue = if (isVideoExpanded) 0.52f else 0f,
+        animationSpec = tween(300, easing = OverlayEasing),
+        label = "tab_bar_bg_alpha",
+    )
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(top = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(0.dp),
+            .background(Color.Black.copy(alpha = bgAlpha)),
     ) {
-        tabs.forEachIndexed { index, title ->
-            val selected = index == selectedIndex
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { onTabSelected(index) },
+        Spacer(Modifier.statusBarsPadding())
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(0.dp),
+        ) {
+            tabs.forEachIndexed { index, title ->
+                val selected = index == selectedIndex
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { onTabSelected(index) },
+                        )
+                        .padding(bottom = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = title,
+                        color = if (selected) Color.White else Color.White.copy(alpha = 0.5f),
+                        fontSize = 16.sp,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                        modifier = Modifier.padding(vertical = 10.dp),
                     )
-                    .padding(bottom = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = title,
-                    color = if (selected) Color.White else Color.White.copy(alpha = 0.55f),
-                    fontSize = 15.sp,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                    modifier = Modifier.padding(vertical = 6.dp),
-                )
-                if (selected) {
-                    Box(
-                        modifier = Modifier
-                            .width(40.dp)
-                            .height(2.dp)
-                            .background(Color.White, RoundedCornerShape(1.dp)),
-                    )
-                } else {
-                    Spacer(Modifier.height(2.dp))
+                    if (selected) {
+                        Box(
+                            modifier = Modifier
+                                .width(44.dp)
+                                .height(2.dp)
+                                .background(Color.White, RoundedCornerShape(1.dp)),
+                        )
+                    } else {
+                        Spacer(Modifier.height(2.dp))
+                    }
                 }
             }
         }
@@ -187,6 +205,7 @@ private fun VideosTab(
     onFavoriteToggle: (String) -> Unit,
     onBookmarkToggle: (String) -> Unit,
     onAddToListPress: (Recipe) -> Unit,
+    onExpandedChange: (Boolean) -> Unit,
 ) {
     val pagerState = rememberPagerState(pageCount = { recipeVideos.size })
 
@@ -213,6 +232,7 @@ private fun VideosTab(
             onFavoriteToggle = { onFavoriteToggle(item.id) },
             onBookmarkToggle = { onBookmarkToggle(item.id) },
             onAddToListPress = { onAddToListPress(item.recipe) },
+            onExpandedChange = onExpandedChange,
             recipe = item.recipe,
         )
     }
@@ -227,6 +247,7 @@ private fun VideoPage(
     onFavoriteToggle: () -> Unit,
     onBookmarkToggle: () -> Unit,
     onAddToListPress: () -> Unit,
+    onExpandedChange: (Boolean) -> Unit,
     recipe: Recipe,
 ) {
     val context = LocalContext.current
@@ -278,7 +299,10 @@ private fun VideoPage(
         RecipeInfoOverlay(
             recipe = item.recipe,
             isExpanded = isExpanded,
-            onExpandedChange = { isExpanded = it },
+            onExpandedChange = {
+                isExpanded = it
+                onExpandedChange(it)
+            },
             modifier = Modifier.fillMaxSize(),
         )
 
@@ -521,23 +545,21 @@ private fun ActionIconButton(
 private fun HeartIcon(active: Boolean) {
     val fill = if (active) VideoAccentColor else Color.White
     Canvas(modifier = Modifier.size(32.dp)) {
+        val sx = size.width / 24f
+        val sy = size.height / 24f
+        // Material Design filled heart: M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
+        // 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3
+        // 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z
         val path = Path().apply {
-            // Heart path scaled to 32dp canvas (viewBox 0 0 24 24)
-            val sx = size.width / 24f
-            val sy = size.height / 24f
-            moveTo(20.84f * sx, 4.61f * sy)
-            cubicTo(20.09f * sx, 3.86f * sy, 19.12f * sx, 3.42f * sy, 18.09f * sx, 3.42f * sy)
-            cubicTo(17.06f * sx, 3.42f * sy, 16.1f * sx, 3.86f * sy, 15.35f * sx, 4.61f * sy)
-            lineTo(12f * sx, 7.96f * sy)
-            lineTo(8.65f * sx, 4.61f * sy)
-            cubicTo(7.1f * sx, 3.07f * sy, 4.6f * sx, 3.07f * sy, 3.06f * sx, 4.61f * sy)
-            cubicTo(1.52f * sx, 6.15f * sy, 1.52f * sx, 8.65f * sy, 3.06f * sx, 10.19f * sy)
-            lineTo(4.12f * sx, 11.25f * sy)
-            lineTo(12f * sx, 19.13f * sy)
-            lineTo(19.88f * sx, 11.25f * sy)
-            lineTo(20.94f * sx, 10.19f * sy)
-            cubicTo(21.69f * sx, 9.44f * sy, 22.13f * sx, 8.47f * sy, 22.13f * sx, 7.44f * sy)
-            cubicTo(22.13f * sx, 6.41f * sy, 21.69f * sx, 5.45f * sy, 20.94f * sx, 4.7f * sy)
+            moveTo(12f * sx, 21.35f * sy)
+            rLineTo(-1.45f * sx, -1.32f * sy)
+            cubicTo(5.4f * sx, 15.36f * sy, 2f * sx, 12.28f * sy, 2f * sx, 8.5f * sy)
+            cubicTo(2f * sx, 5.42f * sy, 4.42f * sx, 3f * sy, 7.5f * sx, 3f * sy)
+            cubicTo(9.24f * sx, 3f * sy, 10.91f * sx, 3.81f * sy, 12f * sx, 5.09f * sy)
+            cubicTo(13.09f * sx, 3.81f * sy, 14.76f * sx, 3f * sy, 16.5f * sx, 3f * sy)
+            cubicTo(19.58f * sx, 3f * sy, 22f * sx, 5.42f * sy, 22f * sx, 8.5f * sy)
+            cubicTo(22f * sx, 12.28f * sy, 18.6f * sx, 15.36f * sy, 13.45f * sx, 20.03f * sy)
+            lineTo(12f * sx, 21.35f * sy)
             close()
         }
         drawPath(path, fill)
