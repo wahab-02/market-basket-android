@@ -82,6 +82,7 @@ fun ListRoute(
     viewModel: ListViewModel = hiltViewModel(),
     searchOpen: Boolean = false,
     onSearchClose: () -> Unit = {},
+    onItemsAdded: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     ListScreen(
@@ -89,8 +90,14 @@ fun ListRoute(
         searchOpen = searchOpen,
         onSearchClose = onSearchClose,
         onSearchQueryChange = viewModel::setSearchQuery,
-        onAdd = viewModel::addByName,
-        onAddFromCatalog = viewModel::addFromCatalog,
+        onAdd = { name ->
+            viewModel.addByName(name)
+            if (name.isNotBlank()) onItemsAdded()
+        },
+        onAddFromCatalog = { product ->
+            viewModel.addFromCatalog(product)
+            onItemsAdded()
+        },
         onIncrement = viewModel::increment,
         onDecrement = viewModel::decrement,
         onToggle = viewModel::toggle,
