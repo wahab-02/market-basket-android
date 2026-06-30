@@ -1,0 +1,218 @@
+package ai.algo1.marketbasket.feature.ideas
+
+import ai.algo1.marketbasket.feature.ideas.R
+
+data class RecipeIngredient(
+    val name: String,
+    val quantity: String,
+    val inList: Boolean = false,
+)
+
+data class RecipeCardItem(
+    val id: String,
+    val matchPercent: Int,
+    val headerTitle: String,
+    val fullTitle: String,
+    val imageRes: Int,
+    val timeMinutes: Int,
+    val calories: Int,
+    val difficulty: String,
+    val tags: List<RecipeCardTag>,
+    val description: String = "",
+    val servings: Int = 2,
+    val ingredients: List<RecipeIngredient> = emptyList(),
+    val instructions: List<String> = emptyList(),
+    val isBookmarked: Boolean = false,
+) {
+    val missingIngredients: List<String>
+        get() = ingredients.filter { !it.inList }.map { it.name }
+}
+
+data class RecipeCardTag(
+    val label: String,
+    val highlighted: Boolean = false,
+)
+
+val recipeCards: List<RecipeCardItem> = listOf(
+    RecipeCardItem(
+        id = "rc1",
+        matchPercent = 80,
+        headerTitle = "Spicy Corn Ribs",
+        fullTitle = "Air-Fried Spicy Corn Ribs",
+        imageRes = R.drawable.corn_ribs,
+        timeMinutes = 15,
+        calories = 210,
+        difficulty = "Easy",
+        tags = listOf(
+            RecipeCardTag("VEGAN"),
+            RecipeCardTag("SNACK"),
+            RecipeCardTag("MEAL PLAN MATCH", highlighted = true),
+        ),
+        description = "A fun and crispy take on corn, air-fried to perfection with bold spices and a squeeze of fresh lime. The perfect snack or side dish.",
+        servings = 4,
+        ingredients = listOf(
+            RecipeIngredient("Corn Cobs", "4 whole"),
+            RecipeIngredient("Salt", "1 tsp"),
+            RecipeIngredient("Fresh Lime", "2 whole"),
+            RecipeIngredient("Olive Oil", "2 tbsp"),
+            RecipeIngredient("Smoked Paprika", "1 tsp"),
+            RecipeIngredient("Cilantro", "1 bunch"),
+        ),
+        instructions = listOf(
+            "Cut each corn cob into quarters lengthwise to create rib-shaped pieces. Brush generously with olive oil.",
+            "Season with salt, smoked paprika, and any additional spices. Toss to coat evenly.",
+            "Air fry at 400°F (200°C) for 12-15 minutes, flipping halfway through, until golden and slightly charred.",
+            "Remove from air fryer, squeeze fresh lime juice over the ribs, and top with chopped cilantro. Serve immediately.",
+        ),
+    ),
+    RecipeCardItem(
+        id = "rc2",
+        matchPercent = 95,
+        headerTitle = "Sriracha Glazed Salm...",
+        fullTitle = "Honey Sriracha Glazed Salmon",
+        imageRes = R.drawable.sriracha,
+        timeMinutes = 25,
+        calories = 420,
+        difficulty = "Easy",
+        tags = listOf(
+            RecipeCardTag("PESCATARIAN"),
+            RecipeCardTag("HIGH PROTEIN"),
+        ),
+        description = "A quick, sweet and spicy glazed salmon that's perfect for weeknight dinners. Ready in under 30 minutes with minimal cleanup.",
+        servings = 2,
+        ingredients = listOf(
+            RecipeIngredient("Salmon Fillets", "2 pieces"),
+            RecipeIngredient("Sriracha Sauce", "2 tbsp"),
+            RecipeIngredient("Honey", "1 tbsp"),
+            RecipeIngredient("Soy Sauce", "1 tbsp"),
+            RecipeIngredient("Fresh Lime", "1 whole"),
+            RecipeIngredient("Garlic Cloves", "3 cloves"),
+        ),
+        instructions = listOf(
+            "In a small bowl, whisk together sriracha, honey, soy sauce, minced garlic, and the juice of half a lime.",
+            "Pat the salmon fillets dry with a paper towel. Season lightly with salt and pepper.",
+            "Heat a non-stick skillet over medium-high heat. Add a splash of oil. Sear salmon skin-side up for 3-4 minutes until golden.",
+            "Flip the salmon. Pour the glaze over the fillets. Cook for another 3-4 minutes, basting the salmon with the thickening sauce until cooked through.",
+        ),
+    ),
+    RecipeCardItem(
+        id = "rc3",
+        matchPercent = 84,
+        headerTitle = "Make It Cheaper",
+        fullTitle = "Creamy Garlic Pasta",
+        imageRes = R.drawable.creamy_garlic_pasta,
+        timeMinutes = 20,
+        calories = 520,
+        difficulty = "Easy",
+        tags = listOf(
+            RecipeCardTag("VEGETARIAN"),
+            RecipeCardTag("MEAL PLAN MATCH", highlighted = true),
+        ),
+        description = "A rich and indulgent pasta dish with a velvety garlic cream sauce. Simple ingredients, restaurant-quality result in just 20 minutes.",
+        servings = 2,
+        ingredients = listOf(
+            RecipeIngredient("Pasta", "200g", inList = true),
+            RecipeIngredient("Garlic", "4 cloves", inList = true),
+            RecipeIngredient("Heavy Cream", "200ml"),
+            RecipeIngredient("Parmesan Cheese", "50g"),
+            RecipeIngredient("Butter", "2 tbsp", inList = true),
+            RecipeIngredient("Salt & Pepper", "to taste", inList = true),
+        ),
+        instructions = listOf(
+            "Cook pasta in salted boiling water until al dente. Reserve 1 cup of pasta water before draining.",
+            "In a large pan, melt butter over medium heat. Add minced garlic and sauté for 1-2 minutes until fragrant.",
+            "Pour in heavy cream and bring to a gentle simmer. Stir in grated Parmesan until the sauce thickens.",
+            "Add drained pasta to the sauce, tossing to coat. Add pasta water as needed to reach desired consistency. Season with salt and pepper.",
+        ),
+    ),
+    RecipeCardItem(
+        id = "rc4",
+        matchPercent = 92,
+        headerTitle = "Chicken & Broccoli Bowl",
+        fullTitle = "Chicken & Broccoli Rice Bowl",
+        imageRes = R.drawable.chicken_broccoli_rice,
+        timeMinutes = 30,
+        calories = 380,
+        difficulty = "Medium",
+        tags = listOf(
+            RecipeCardTag("HIGH PROTEIN"),
+            RecipeCardTag("MEAL PLAN MATCH", highlighted = true),
+        ),
+        description = "A wholesome and protein-packed rice bowl with tender chicken, crisp broccoli, and a savory soy-sesame sauce. Meal prep friendly.",
+        servings = 2,
+        ingredients = listOf(
+            RecipeIngredient("Chicken Breast", "2 pieces", inList = true),
+            RecipeIngredient("Broccoli", "2 cups", inList = true),
+            RecipeIngredient("Rice", "1 cup", inList = true),
+            RecipeIngredient("Soy Sauce", "2 tbsp", inList = true),
+            RecipeIngredient("Garlic", "3 cloves", inList = true),
+            RecipeIngredient("Sesame Oil", "1 tbsp", inList = true),
+        ),
+        instructions = listOf(
+            "Cook rice according to package instructions. Set aside and keep warm.",
+            "Slice chicken breast into strips. Season with salt, pepper, and a splash of soy sauce.",
+            "Heat oil in a wok or large skillet over high heat. Cook chicken for 5-6 minutes until cooked through. Set aside.",
+            "In the same pan, stir-fry broccoli with garlic for 3-4 minutes. Add remaining soy sauce and sesame oil. Serve everything over rice.",
+        ),
+    ),
+    RecipeCardItem(
+        id = "rc5",
+        matchPercent = 84,
+        headerTitle = "Fresh Strawberry Bowl",
+        fullTitle = "Fresh Strawberry Smoothie Bowl",
+        imageRes = R.drawable.fresh_strawberries,
+        timeMinutes = 10,
+        calories = 180,
+        difficulty = "Easy",
+        tags = listOf(
+            RecipeCardTag("VEGAN"),
+            RecipeCardTag("BREAKFAST"),
+        ),
+        description = "A vibrant and nutritious smoothie bowl loaded with fresh strawberries, banana, and topped with crunchy granola and coconut flakes.",
+        servings = 1,
+        ingredients = listOf(
+            RecipeIngredient("Strawberries", "2 cups", inList = true),
+            RecipeIngredient("Banana", "1 whole", inList = true),
+            RecipeIngredient("Greek Yogurt", "½ cup", inList = true),
+            RecipeIngredient("Granola", "½ cup"),
+            RecipeIngredient("Coconut Flakes", "2 tbsp"),
+            RecipeIngredient("Honey", "1 tbsp", inList = true),
+        ),
+        instructions = listOf(
+            "Blend frozen strawberries, banana, and Greek yogurt until smooth and thick. Add a splash of milk if needed.",
+            "Pour the smoothie into a bowl — it should be thick enough to hold toppings.",
+            "Top with granola, coconut flakes, and a few fresh strawberry slices.",
+            "Drizzle with honey and serve immediately.",
+        ),
+    ),
+    RecipeCardItem(
+        id = "rc6",
+        matchPercent = 76,
+        headerTitle = "Cheddar Mac & Cheese",
+        fullTitle = "Cabot Cheddar Mac & Cheese",
+        imageRes = R.drawable.kraft_cabot_cheddar,
+        timeMinutes = 25,
+        calories = 650,
+        difficulty = "Easy",
+        tags = listOf(
+            RecipeCardTag("VEGETARIAN"),
+            RecipeCardTag("COMFORT FOOD"),
+        ),
+        description = "The ultimate comfort food — creamy, cheesy mac made with sharp Cabot cheddar. Rich, satisfying, and ready in under 30 minutes.",
+        servings = 4,
+        ingredients = listOf(
+            RecipeIngredient("Elbow Pasta", "300g"),
+            RecipeIngredient("Cabot Cheddar", "200g", inList = true),
+            RecipeIngredient("Butter", "3 tbsp", inList = true),
+            RecipeIngredient("Whole Milk", "300ml"),
+            RecipeIngredient("Flour", "2 tbsp", inList = true),
+            RecipeIngredient("Salt & Pepper", "to taste", inList = true),
+        ),
+        instructions = listOf(
+            "Cook elbow pasta in salted boiling water until al dente. Drain and set aside.",
+            "In a medium saucepan, melt butter over medium heat. Whisk in flour and cook for 1 minute to form a roux.",
+            "Gradually whisk in milk, cooking until the sauce thickens. Remove from heat and stir in shredded Cabot cheddar until melted.",
+            "Add cooked pasta to the cheese sauce and stir to combine. Season with salt and pepper. Serve hot.",
+        ),
+    ),
+)
