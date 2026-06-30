@@ -30,6 +30,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,8 +57,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.pager.VerticalPager
@@ -76,7 +81,10 @@ private const val TabBarScrimAlpha = 0.42f
 private val IdeasTabTitles = listOf("Videos", "Recipes", "Meal Planning")
 
 @Composable
-fun IdeasRoute(viewModel: IdeasViewModel = hiltViewModel()) {
+fun IdeasRoute(
+    viewModel: IdeasViewModel = hiltViewModel(),
+    onTabChange: (Int) -> Unit = {},
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     IdeasScreen(
         state = state,
@@ -87,6 +95,7 @@ fun IdeasRoute(viewModel: IdeasViewModel = hiltViewModel()) {
         onAddToListPress = viewModel::onAddToListPress,
         onAddToListDismiss = viewModel::onAddToListDismiss,
         onAddIngredientsConfirmed = viewModel::onAddIngredientsConfirmed,
+        onTabChange = onTabChange,
     )
 }
 
@@ -100,11 +109,26 @@ fun IdeasScreen(
     onAddToListPress: (Recipe) -> Unit,
     onAddToListDismiss: () -> Unit,
     onAddIngredientsConfirmed: (String) -> Unit,
+    onTabChange: (Int) -> Unit = {},
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var isVideoExpanded by remember { mutableStateOf(false) }
+    LaunchedEffect(selectedTab) {
+        if (selectedTab != 0) isVideoExpanded = false
+        onTabChange(selectedTab)
+    }
 
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
+    val view = LocalView.current
+    val isVideosTab = selectedTab == 0
+    SideEffect {
+        val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
+        val controller = WindowInsetsControllerCompat(window, view)
+        controller.isAppearanceLightStatusBars = !isVideosTab
+        controller.isAppearanceLightNavigationBars = !isVideosTab
+    }
+
+    val contentBackground = if (selectedTab == 0) Color.Black else Color(0xFFF0F0F0)
+    Box(Modifier.fillMaxSize().background(contentBackground)) {
         when (selectedTab) {
             0 -> VideosTab(
                 state = state,
@@ -118,6 +142,8 @@ fun IdeasScreen(
                 onAddToListPress = onAddToListPress,
                 onExpandedChange = { isVideoExpanded = it },
             )
+            1 -> RecipesTab()
+            2 -> MealPlanningTab(onNavigateToRecipes = { selectedTab = 1 })
             else -> PlaceholderTab(IdeasTabTitles[selectedTab])
         }
 
@@ -148,24 +174,26 @@ private fun IdeasTabBar(
     isVideoExpanded: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val isVideosTab = selectedIndex == 0
     val bgStartAlpha by animateFloatAsState(
         targetValue = if (isVideoExpanded) 0.98f else TabBarScrimAlpha,
         animationSpec = tween(300, easing = OverlayEasing),
         label = "tab_bar_bg_alpha",
     )
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    colorStops = arrayOf(
-                        0f to Color.Black.copy(alpha = bgStartAlpha),
-                        0.78f to Color.Black.copy(alpha = bgStartAlpha),
-                        1f to Color.Transparent,
-                    ),
-                )
+    val columnModifier = if (isVideosTab) {
+        modifier.fillMaxWidth().background(
+            Brush.verticalGradient(
+                colorStops = arrayOf(
+                    0f to Color.Black.copy(alpha = bgStartAlpha),
+                    0.78f to Color.Black.copy(alpha = bgStartAlpha),
+                    1f to Color.Transparent,
+                ),
             ),
-    ) {
+        )
+    } else {
+        modifier.fillMaxWidth().background(Color.White)
+    }
+    Column(modifier = columnModifier) {
         Spacer(Modifier.statusBarsPadding())
         Row(
             modifier = Modifier
@@ -175,6 +203,12 @@ private fun IdeasTabBar(
         ) {
             tabs.forEachIndexed { index, title ->
                 val selected = index == selectedIndex
+                val textColor = if (isVideosTab) {
+                    if (selected) Color.White else Color.White.copy(alpha = 0.5f)
+                } else {
+                    if (selected) Color(0xFF111111) else Color(0xFF111111).copy(alpha = 0.4f)
+                }
+                val indicatorColor = if (isVideosTab) Color.White else Color(0xFF111111)
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -188,7 +222,7 @@ private fun IdeasTabBar(
                 ) {
                     Text(
                         text = title,
-                        color = if (selected) Color.White else Color.White.copy(alpha = 0.5f),
+                        color = textColor,
                         fontSize = 16.sp,
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                         maxLines = 1,
@@ -199,7 +233,7 @@ private fun IdeasTabBar(
                             modifier = Modifier
                                 .width(44.dp)
                                 .height(2.dp)
-                                .background(Color.White, RoundedCornerShape(1.dp)),
+                                .background(indicatorColor, RoundedCornerShape(1.dp)),
                         )
                     } else {
                         Spacer(Modifier.height(2.dp))

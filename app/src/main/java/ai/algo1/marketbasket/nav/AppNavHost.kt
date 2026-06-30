@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.activity.compose.BackHandler
 import ai.algo1.marketbasket.feature.chat.ChatScreen
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,6 +41,7 @@ fun AppNavHost() {
     }
 
     var chatOpen by remember { mutableStateOf(false) }
+    var ideasTabIndex by remember { mutableIntStateOf(0) }
     BackHandler(enabled = chatOpen) { chatOpen = false }
 
     LaunchedEffect(selectedDestination) {
@@ -88,7 +90,9 @@ fun AppNavHost() {
                             )
                             Destination.Deals -> ai.algo1.marketbasket.feature.deals.DealsRoute()
                             Destination.You -> ai.algo1.marketbasket.feature.onboarding.ConnectionRoute()
-                            Destination.Ideas -> ai.algo1.marketbasket.feature.ideas.IdeasRoute()
+                            Destination.Ideas -> ai.algo1.marketbasket.feature.ideas.IdeasRoute(
+                                onTabChange = { ideasTabIndex = it },
+                            )
                         }
                     }
                 }
@@ -104,7 +108,7 @@ fun AppNavHost() {
                 navController.navigateTab(dest)
             },
             modifier = Modifier.align(Alignment.BottomCenter),
-            inverted = selectedDestination == Destination.Ideas,
+            inverted = selectedDestination == Destination.Ideas && ideasTabIndex == 0,
         )
         if (selectedDestination != Destination.Ideas) {
             FloatingChatLauncher(
