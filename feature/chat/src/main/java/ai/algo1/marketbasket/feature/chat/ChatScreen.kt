@@ -53,6 +53,7 @@ private val SUGGESTIONS = listOf(
 @Composable
 fun ChatScreen(
     onClose: () -> Unit,
+    onItemsAdded: () -> Unit = {},
     viewModel: ChatViewModel = hiltViewModel(),
 ) {
     val messages by viewModel.messages.collectAsStateWithLifecycle()
@@ -129,7 +130,10 @@ fun ChatScreen(
                     streamingText = streamingText,
                     liveSteps = liveSteps,
                     isLoading = isLoading,
-                    onAddIngredients = viewModel::handleAddIngredients,
+                    onAddIngredients = { messageId, ingredients ->
+                        viewModel.handleAddIngredients(messageId, ingredients)
+                        onItemsAdded()
+                    },
                     addedRecipeIds = addedRecipeIds,
                     onSuggestion = viewModel::sendMessage,
                     modifier = Modifier.weight(1f),
