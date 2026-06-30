@@ -31,6 +31,7 @@ import androidx.navigation.compose.rememberNavController
 fun AppNavHost() {
     val navController = rememberNavController()
     val listSearchOpen = remember { mutableStateOf(false) }
+    val addItemNotificationState = remember { AddItemNotificationState() }
     val current by navController.currentBackStackEntryAsState()
     val selectedDestination = Destination.entries.firstOrNull { dest ->
         current?.destination?.hierarchy?.any { it.route == dest.route } == true
@@ -42,6 +43,9 @@ fun AppNavHost() {
 
     var chatOpen by remember { mutableStateOf(false) }
     var ideasTabIndex by remember { mutableIntStateOf(0) }
+    val showItemsAdded: (String) -> Unit = { message ->
+        addItemNotificationState.showItemsAdded(message)
+    }
     BackHandler(enabled = chatOpen) { chatOpen = false }
 
     LaunchedEffect(selectedDestination) {
@@ -87,11 +91,15 @@ fun AppNavHost() {
                             Destination.List -> ai.algo1.marketbasket.feature.list.ListRoute(
                                 searchOpen = listSearchOpen.value,
                                 onSearchClose = { listSearchOpen.value = false },
+                                onItemsAdded = { showItemsAdded("Item Added") },
                             )
-                            Destination.Deals -> ai.algo1.marketbasket.feature.deals.DealsRoute()
+                            Destination.Deals -> ai.algo1.marketbasket.feature.deals.DealsRoute(
+                                onItemsAdded = { showItemsAdded("Items added from deals") },
+                            )
                             Destination.You -> ai.algo1.marketbasket.feature.onboarding.ConnectionRoute()
                             Destination.Ideas -> ai.algo1.marketbasket.feature.ideas.IdeasRoute(
                                 onTabChange = { ideasTabIndex = it },
+                                onItemsAdded = showItemsAdded,
                             )
                         }
                     }
@@ -110,7 +118,7 @@ fun AppNavHost() {
             modifier = Modifier.align(Alignment.BottomCenter),
             inverted = selectedDestination == Destination.Ideas && ideasTabIndex == 0,
         )
-        if (selectedDestination != Destination.Ideas) {
+        if (selectedDestination != Destination.Ideas || ideasTabIndex == 1) {
             FloatingChatLauncher(
                 onClick = { chatOpen = true },
                 modifier = Modifier.align(Alignment.BottomEnd).padding(end = 28.dp, bottom = 104.dp),
@@ -118,8 +126,17 @@ fun AppNavHost() {
         }
 
         if (chatOpen) {
-            ChatScreen(onClose = { chatOpen = false })
+            ChatScreen(
+                onClose = { chatOpen = false },
+                onItemsAdded = { showItemsAdded("Items added from chat") },
+            )
         }
+
+        AddItemNotificationHost(
+            notification = addItemNotificationState.current,
+            onDismiss = addItemNotificationState::dismiss,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
 
         // HomeIntroOverlay is intentionally disabled for now; keep the component for later.
     }

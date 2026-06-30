@@ -84,6 +84,7 @@ private val IdeasTabTitles = listOf("Videos", "Recipes", "Meal Planning")
 fun IdeasRoute(
     viewModel: IdeasViewModel = hiltViewModel(),
     onTabChange: (Int) -> Unit = {},
+    onItemsAdded: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     IdeasScreen(
@@ -98,6 +99,7 @@ fun IdeasRoute(
         onAddRecipeIngredient = viewModel::onAddRecipeIngredient,
         onAddMissingRecipeIngredients = viewModel::onAddMissingRecipeIngredients,
         onTabChange = onTabChange,
+        onItemsAdded = onItemsAdded,
     )
 }
 
@@ -114,10 +116,12 @@ fun IdeasScreen(
     onAddRecipeIngredient: (String, RecipeIngredient) -> Unit,
     onAddMissingRecipeIngredients: (String) -> Unit,
     onTabChange: (Int) -> Unit = {},
+    onItemsAdded: (String) -> Unit = {},
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var isVideoExpanded by remember { mutableStateOf(false) }
     var selectedRecipeId by remember { mutableStateOf<String?>(null) }
+    var pendingVideoAddNotification by remember { mutableStateOf(false) }
     val recipesWithShoppingList = remember(state.shoppingCategories) {
         recipeCards.map { it.withShoppingListMatches(state.shoppingCategories) }
     }
@@ -131,6 +135,12 @@ fun IdeasScreen(
     }
     BackHandler(enabled = selectedRecipeId != null) {
         selectedRecipeId = null
+    }
+    LaunchedEffect(state.selectedRecipeForList, state.isAddingToList, pendingVideoAddNotification) {
+        if (pendingVideoAddNotification && state.selectedRecipeForList == null && !state.isAddingToList) {
+            pendingVideoAddNotification = false
+            onItemsAdded("Items added from video")
+        }
     }
 
     val view = LocalView.current
@@ -148,8 +158,14 @@ fun IdeasScreen(
             RecipeDetailScreen(
                 recipe = selectedRecipe,
                 onBack = { selectedRecipeId = null },
-                onAddIngredient = { ingredient -> onAddRecipeIngredient(selectedRecipe.id, ingredient) },
-                onAddMissingIngredients = { onAddMissingRecipeIngredients(selectedRecipe.id) },
+                onAddIngredient = { ingredient ->
+                    onAddRecipeIngredient(selectedRecipe.id, ingredient)
+                    onItemsAdded("Items added from recipe")
+                },
+                onAddMissingIngredients = {
+                    onAddMissingRecipeIngredients(selectedRecipe.id)
+                    onItemsAdded("Items added from recipe")
+                },
             )
         } else {
             when (selectedTab) {
@@ -168,7 +184,10 @@ fun IdeasScreen(
                 1 -> RecipesTab(
                     recipes = recipesWithShoppingList,
                     onViewRecipe = { selectedRecipeId = it.id },
-                    onAddMissingIngredients = { onAddMissingRecipeIngredients(it.id) },
+                    onAddMissingIngredients = {
+                        onAddMissingRecipeIngredients(it.id)
+                        onItemsAdded("Items added from recipe")
+                    },
                 )
                 2 -> MealPlanningTab(onNavigateToRecipes = { selectedTab = 1 })
                 else -> PlaceholderTab(IdeasTabTitles[selectedTab])
@@ -190,7 +209,10 @@ fun IdeasScreen(
                 recipe = recipe,
                 isAdding = state.isAddingToList,
                 onDismiss = onAddToListDismiss,
-                onConfirm = { onAddIngredientsConfirmed(recipe.id) },
+                onConfirm = {
+                    pendingVideoAddNotification = true
+                    onAddIngredientsConfirmed(recipe.id)
+                },
             )
         }
     }

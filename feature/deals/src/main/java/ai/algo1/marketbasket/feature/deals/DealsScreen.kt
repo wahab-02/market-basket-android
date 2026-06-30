@@ -39,9 +39,18 @@ private val DealRed = Color(0xFFC7353A)
 private val DealsBackground = Color(0xFFF1F1F1)
 
 @Composable
-fun DealsRoute(viewModel: DealsViewModel = hiltViewModel()) {
+fun DealsRoute(
+    viewModel: DealsViewModel = hiltViewModel(),
+    onItemsAdded: () -> Unit = {},
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    DealsScreen(state = state, onAdd = viewModel::addToList)
+    DealsScreen(
+        state = state,
+        onAdd = { deal ->
+            viewModel.addToList(deal)
+            onItemsAdded()
+        },
+    )
 }
 
 @Composable
