@@ -58,6 +58,8 @@ private val DetailBorder = Color(0xFFE0E0E0)
 internal fun RecipeDetailScreen(
     recipe: RecipeCardItem,
     onBack: () -> Unit,
+    onAddIngredient: (RecipeIngredient) -> Unit = {},
+    onAddMissingIngredients: () -> Unit = {},
 ) {
     var isBookmarked by remember { mutableStateOf(recipe.isBookmarked) }
     val missingCount = recipe.ingredients.count { !it.inList }
@@ -145,7 +147,7 @@ internal fun RecipeDetailScreen(
                         HorizontalDivider(color = Color(0xFFEEEEEE))
 
                         recipe.ingredients.forEachIndexed { index, ingredient ->
-                            IngredientRow(ingredient = ingredient, onAdd = {})
+                            IngredientRow(ingredient = ingredient, onAdd = { onAddIngredient(ingredient) })
                             if (index < recipe.ingredients.lastIndex) {
                                 HorizontalDivider(color = Color(0xFFEEEEEE))
                             }
@@ -153,7 +155,7 @@ internal fun RecipeDetailScreen(
 
                         if (missingCount > 0) {
                             Spacer(Modifier.height(16.dp))
-                            AddMissingButton(count = missingCount, onClick = {})
+                            AddMissingButton(count = missingCount, onClick = onAddMissingIngredients)
                         }
 
                         Spacer(Modifier.height(24.dp))

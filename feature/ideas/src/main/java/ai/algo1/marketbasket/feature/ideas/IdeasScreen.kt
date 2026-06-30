@@ -95,6 +95,8 @@ fun IdeasRoute(
         onAddToListPress = viewModel::onAddToListPress,
         onAddToListDismiss = viewModel::onAddToListDismiss,
         onAddIngredientsConfirmed = viewModel::onAddIngredientsConfirmed,
+        onAddRecipeIngredient = viewModel::onAddRecipeIngredient,
+        onAddMissingRecipeIngredients = viewModel::onAddMissingRecipeIngredients,
         onTabChange = onTabChange,
     )
 }
@@ -109,13 +111,26 @@ fun IdeasScreen(
     onAddToListPress: (Recipe) -> Unit,
     onAddToListDismiss: () -> Unit,
     onAddIngredientsConfirmed: (String) -> Unit,
+    onAddRecipeIngredient: (String, RecipeIngredient) -> Unit,
+    onAddMissingRecipeIngredients: (String) -> Unit,
     onTabChange: (Int) -> Unit = {},
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var isVideoExpanded by remember { mutableStateOf(false) }
+    var selectedRecipeId by remember { mutableStateOf<String?>(null) }
+    val recipesWithShoppingList = remember(state.shoppingCategories) {
+        recipeCards.map { it.withShoppingListMatches(state.shoppingCategories) }
+    }
+    val selectedRecipe = selectedRecipeId?.let { id ->
+        recipesWithShoppingList.firstOrNull { it.id == id }
+    }
     LaunchedEffect(selectedTab) {
         if (selectedTab != 0) isVideoExpanded = false
+        selectedRecipeId = null
         onTabChange(selectedTab)
+    }
+    BackHandler(enabled = selectedRecipeId != null) {
+        selectedRecipeId = null
     }
 
     val view = LocalView.current
@@ -129,31 +144,46 @@ fun IdeasScreen(
 
     val contentBackground = if (selectedTab == 0) Color.Black else Color(0xFFF0F0F0)
     Box(Modifier.fillMaxSize().background(contentBackground)) {
-        when (selectedTab) {
-            0 -> VideosTab(
-                state = state,
-                player = player,
-                onPageSettled = {
-                    isVideoExpanded = false
-                    onPageSettled(it)
-                },
-                onFavoriteToggle = onFavoriteToggle,
-                onBookmarkToggle = onBookmarkToggle,
-                onAddToListPress = onAddToListPress,
-                onExpandedChange = { isVideoExpanded = it },
+        if (selectedRecipe != null) {
+            RecipeDetailScreen(
+                recipe = selectedRecipe,
+                onBack = { selectedRecipeId = null },
+                onAddIngredient = { ingredient -> onAddRecipeIngredient(selectedRecipe.id, ingredient) },
+                onAddMissingIngredients = { onAddMissingRecipeIngredients(selectedRecipe.id) },
             )
-            1 -> RecipesTab()
-            2 -> MealPlanningTab(onNavigateToRecipes = { selectedTab = 1 })
-            else -> PlaceholderTab(IdeasTabTitles[selectedTab])
+        } else {
+            when (selectedTab) {
+                0 -> VideosTab(
+                    state = state,
+                    player = player,
+                    onPageSettled = {
+                        isVideoExpanded = false
+                        onPageSettled(it)
+                    },
+                    onFavoriteToggle = onFavoriteToggle,
+                    onBookmarkToggle = onBookmarkToggle,
+                    onAddToListPress = onAddToListPress,
+                    onExpandedChange = { isVideoExpanded = it },
+                )
+                1 -> RecipesTab(
+                    recipes = recipesWithShoppingList,
+                    onViewRecipe = { selectedRecipeId = it.id },
+                    onAddMissingIngredients = { onAddMissingRecipeIngredients(it.id) },
+                )
+                2 -> MealPlanningTab(onNavigateToRecipes = { selectedTab = 1 })
+                else -> PlaceholderTab(IdeasTabTitles[selectedTab])
+            }
         }
 
-        IdeasTabBar(
-            tabs = IdeasTabTitles,
-            selectedIndex = selectedTab,
-            onTabSelected = { selectedTab = it },
-            isVideoExpanded = isVideoExpanded,
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
+        if (selectedRecipeId == null) {
+            IdeasTabBar(
+                tabs = IdeasTabTitles,
+                selectedIndex = selectedTab,
+                onTabSelected = { selectedTab = it },
+                isVideoExpanded = isVideoExpanded,
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
+        }
 
         state.selectedRecipeForList?.let { recipe ->
             AddIngredientsDialog(

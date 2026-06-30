@@ -73,7 +73,12 @@ private val RecipesMissingBorder = Color(0xFFDDDDDD)
 private val RecipesCardBg = Color.White
 
 @Composable
-internal fun RecipesTab(onAskBasket: () -> Unit = {}, onViewRecipe: (RecipeCardItem) -> Unit = {}) {
+internal fun RecipesTab(
+    recipes: List<RecipeCardItem> = recipeCards,
+    onAskBasket: () -> Unit = {},
+    onViewRecipe: (RecipeCardItem) -> Unit = {},
+    onAddMissingIngredients: (RecipeCardItem) -> Unit = {},
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -94,13 +99,14 @@ internal fun RecipesTab(onAskBasket: () -> Unit = {}, onViewRecipe: (RecipeCardI
                 FilterBar(modifier = Modifier.padding(vertical = 8.dp))
             }
             item { Spacer(Modifier.height(8.dp)) }
-            items(recipeCards, key = { it.id }) { card ->
+            items(recipes, key = { it.id }) { card ->
                 var bookmarked by remember { mutableStateOf(card.isBookmarked) }
                 RecipeCard(
                     card = card,
                     isBookmarked = bookmarked,
                     onBookmarkToggle = { bookmarked = !bookmarked },
                     onViewRecipe = { onViewRecipe(card) },
+                    onAddMissingIngredients = { onAddMissingIngredients(card) },
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                 )
             }
@@ -292,6 +298,7 @@ private fun RecipeCard(
     isBookmarked: Boolean,
     onBookmarkToggle: () -> Unit,
     onViewRecipe: () -> Unit = {},
+    onAddMissingIngredients: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -371,7 +378,7 @@ private fun RecipeCard(
                         }
                     }
                     Surface(
-                        onClick = {},
+                        onClick = onAddMissingIngredients,
                         modifier = Modifier
                             .weight(2f)
                             .height(48.dp),
