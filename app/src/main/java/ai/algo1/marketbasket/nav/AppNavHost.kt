@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.activity.compose.BackHandler
 import ai.algo1.marketbasket.feature.chat.ChatScreen
+import ai.algo1.marketbasket.feature.today.TabIntroPopup
+import ai.algo1.marketbasket.feature.today.TabIntroPopupKind
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -41,7 +43,9 @@ fun AppNavHost() {
     }
 
     var chatOpen by remember { mutableStateOf(false) }
+    var drawerOpen by remember { mutableStateOf(false) }
     var ideasTabIndex by remember { mutableIntStateOf(0) }
+    var activeTabIntro by remember { mutableStateOf<TabIntroPopupKind?>(null) }
     BackHandler(enabled = chatOpen) { chatOpen = false }
 
     LaunchedEffect(selectedDestination) {
@@ -58,10 +62,14 @@ fun AppNavHost() {
                     selectedDestination.showsMarketBasketHeader() -> {
                         MarketBasketHeader(
                             onSearchClick = openListSearch,
+                            onMenuClick = { drawerOpen = true },
                         )
                     }
                     selectedDestination.showsCompactHeader() -> {
-                        MarketBasketCompactHeader(onSearchClick = openListSearch)
+                        MarketBasketCompactHeader(
+                            onSearchClick = openListSearch,
+                            onMenuClick = { drawerOpen = true },
+                        )
                     }
                 }
             },
@@ -105,6 +113,11 @@ fun AppNavHost() {
                 if (dest != Destination.List) {
                     listSearchOpen.value = false
                 }
+                activeTabIntro = when (dest) {
+                    Destination.Today -> TabIntroPopupKind.Today
+                    Destination.Ideas -> TabIntroPopupKind.Ideas
+                    else -> null
+                }
                 navController.navigateTab(dest)
             },
             modifier = Modifier.align(Alignment.BottomCenter),
@@ -120,6 +133,16 @@ fun AppNavHost() {
         if (chatOpen) {
             ChatScreen(onClose = { chatOpen = false })
         }
+
+        TabIntroPopup(
+            kind = activeTabIntro,
+            onDismiss = { activeTabIntro = null },
+        )
+
+        ConnectionsBottomDrawer(
+            open = drawerOpen,
+            onClose = { drawerOpen = false },
+        )
 
         // HomeIntroOverlay is intentionally disabled for now; keep the component for later.
     }

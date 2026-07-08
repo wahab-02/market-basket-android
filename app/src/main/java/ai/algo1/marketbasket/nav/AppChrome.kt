@@ -15,6 +15,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -32,13 +34,22 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -77,6 +88,251 @@ private val AppBackground = Color(0xFFF7F7F7)
 private val HeaderButtonBorder = Color(0xFFF2F2F2)
 private val NavPillEasing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
 private val NavPopEasing = CubicBezierEasing(0.34f, 1.56f, 0.64f, 1f)
+
+private data class DrawerOption(
+    val id: String,
+    val label: String,
+    val subtitle: String,
+    val iconRes: Int? = null,
+    val icon: ImageVector? = null,
+    val iconText: String? = null,
+    val iconBackground: Color,
+    val iconTint: Color = Color.White,
+    val connected: Boolean? = null,
+    val dividerBefore: Boolean = false,
+    val isLogout: Boolean = false,
+    val disabled: Boolean = false,
+)
+
+private val drawerOptions = listOf(
+    DrawerOption(
+        id = "scan",
+        label = "Scan List",
+        subtitle = "Scan paper list to add items",
+        iconRes = R.drawable.scan,
+        iconBackground = Color.Transparent,
+    ),
+    DrawerOption(
+        id = "family",
+        label = "Add Family Member",
+        subtitle = "Share your list with family",
+        iconRes = R.drawable.family,
+        iconBackground = Color.Transparent,
+    ),
+    DrawerOption(
+        id = "whatsapp",
+        label = "Connect with WhatsApp",
+        subtitle = "Connect with WhatsApp",
+        iconRes = R.drawable.whatsapp,
+        iconBackground = Color.Transparent,
+        connected = true,
+        dividerBefore = true,
+    ),
+    DrawerOption(
+        id = "slack",
+        label = "Slack",
+        subtitle = "Connect with Slack",
+        iconRes = R.drawable.slack,
+        iconBackground = Color.Transparent,
+        connected = false,
+    ),
+    DrawerOption(
+        id = "alexa",
+        label = "Amazon Alexa",
+        subtitle = "Connect with Amazon Alexa",
+        iconRes = R.drawable.alexa_icon,
+        iconBackground = Color.Transparent,
+    ),
+    DrawerOption(
+        id = "chatgpt",
+        label = "ChatGPT",
+        subtitle = "Connect with ChatGPT",
+        iconRes = R.drawable.chatgpt,
+        iconBackground = Color.Transparent,
+    ),
+    DrawerOption(
+        id = "claude",
+        label = "Claude",
+        subtitle = "Connect with Claude",
+        iconRes = R.drawable.claude,
+        iconBackground = Color.Transparent,
+    ),
+    DrawerOption(
+        id = "google",
+        label = "Google Assistant",
+        subtitle = "Connect your Google Account",
+        iconRes = R.drawable.google_assistant_logo,
+        iconBackground = Color.Transparent,
+    ),
+    DrawerOption(
+        id = "siri",
+        label = "Siri Shortcuts",
+        subtitle = "Add items with Siri",
+        iconRes = R.drawable.siri,
+        iconBackground = Color.Transparent,
+    ),
+    DrawerOption(
+        id = "logout",
+        label = "Logout",
+        subtitle = "Sign out of your account",
+        icon = Icons.Filled.Logout,
+        iconBackground = Color(0xFFFEE2E2),
+        iconTint = Color(0xFFEF4444),
+        dividerBefore = true,
+        isLogout = true,
+    ),
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ConnectionsBottomDrawer(
+    open: Boolean,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (!open) return
+
+    ModalBottomSheet(
+        onDismissRequest = onClose,
+        modifier = modifier,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = Color.White,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        dragHandle = {
+            Box(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.width(40.dp).height(4.dp).background(Color(0xFFD1D5DB), RoundedCornerShape(999.dp)))
+                Surface(
+                    color = Color(0xFFE5E7EB),
+                    shape = CircleShape,
+                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 20.dp).size(32.dp).clickable(onClick = onClose),
+                ) {
+                    Icon(Icons.Filled.Close, contentDescription = "Close menu", tint = Color(0xFF666666), modifier = Modifier.padding(8.dp))
+                }
+            }
+        },
+    ) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 28.dp)) {
+            Box(Modifier.fillMaxWidth().padding(bottom = 20.dp), contentAlignment = Alignment.Center) {
+                Image(
+                    painter = painterResource(R.drawable.market_basket),
+                    contentDescription = "Market Basket",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.width(192.dp).height(30.dp),
+                )
+            }
+
+            drawerOptions.groupByDivider().forEach { group ->
+                Surface(
+                    color = Color.White,
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, Color(0xFFF3F4F6)),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp).shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x14080816), spotColor = Color(0x14080816)),
+                ) {
+                    Column(Modifier.fillMaxWidth()) {
+                        group.forEachIndexed { index, option ->
+                            DrawerOptionRow(
+                                option = option,
+                                showDivider = index != group.lastIndex,
+                                onClick = onClose,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrawerOptionRow(option: DrawerOption, showDivider: Boolean, onClick: () -> Unit) {
+    val textColor = when {
+        option.disabled -> Color(0xFF9CA3AF)
+        option.isLogout -> Color(0xFFEF4444)
+        else -> Color(0xFF111827)
+    }
+    val interactionSource = remember { MutableInteractionSource() }
+    Surface(
+        color = if (option.disabled) Color(0xFFF9FAFB) else Color.White,
+        modifier = Modifier.fillMaxWidth().clickable(interactionSource = interactionSource, indication = null, enabled = !option.disabled, onClick = onClick),
+    ) {
+        Column(Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                DrawerOptionIcon(option)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(option.label, color = textColor, fontSize = 19.sp, lineHeight = 22.sp, fontWeight = FontWeight.Bold)
+                    when {
+                        option.connected == true -> ConnectedStatus()
+                        else -> Text(option.subtitle, color = Color(0xFF9CA3AF), fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+                DrawerOptionTrailing(option)
+            }
+            if (showDivider) {
+                Box(Modifier.fillMaxWidth().padding(start = 88.dp).height(1.dp).background(Color(0xFFF3F4F6)))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrawerOptionIcon(option: DrawerOption) {
+    Surface(color = option.iconBackground, shape = RoundedCornerShape(12.dp), modifier = Modifier.size(48.dp)) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            if (option.iconRes != null) {
+                Image(painter = painterResource(option.iconRes), contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+            } else if (option.icon != null) {
+                Icon(option.icon, contentDescription = null, tint = option.iconTint, modifier = Modifier.size(24.dp))
+            } else {
+                Text(option.iconText.orEmpty(), color = option.iconTint, fontSize = if ((option.iconText?.length ?: 0) > 1) 12.sp else 20.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConnectedStatus() {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(Modifier.size(12.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(12.dp).background(Color(0xFF86EFAC), CircleShape))
+            Box(Modifier.size(6.dp).background(Color(0xFF16A34A), CircleShape))
+        }
+        Text("Connected", color = Color(0xFF16A34A), fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun DrawerOptionTrailing(option: DrawerOption) {
+    when {
+        option.disabled -> Icon(Icons.Filled.Lock, contentDescription = null, tint = Color(0xFFD1D5DB), modifier = Modifier.size(24.dp))
+        option.connected == true -> ToggleSwitch(on = true)
+        else -> Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null, tint = if (option.isLogout) Color(0xFFEF4444) else Color(0xFFCCCCCC), modifier = Modifier.size(24.dp))
+    }
+}
+
+@Composable
+private fun ToggleSwitch(on: Boolean) {
+    Surface(color = if (on) Color(0xFF34C759) else Color(0xFFE5E7EB), shape = RoundedCornerShape(999.dp), modifier = Modifier.width(48.dp).height(28.dp)) {
+        Box(Modifier.fillMaxSize().padding(2.dp), contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart) {
+            Box(Modifier.size(24.dp).background(Color.White, CircleShape).shadow(2.dp, CircleShape))
+        }
+    }
+}
+
+private fun List<DrawerOption>.groupByDivider(): List<List<DrawerOption>> {
+    val groups = mutableListOf<MutableList<DrawerOption>>()
+    forEach { option ->
+        if (groups.isEmpty() || option.dividerBefore) {
+            groups += mutableListOf(option)
+        } else {
+            groups.last() += option
+        }
+    }
+    return groups
+}
 
 @Composable
 internal fun MarketBasketHeader(
